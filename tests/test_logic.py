@@ -5,11 +5,13 @@ from __future__ import annotations
 from datetime import date, datetime, time, timezone
 import importlib.util
 from pathlib import Path
+import sys
 
 _spec = importlib.util.spec_from_file_location(
     "sp_logic", Path(__file__).parents[1] / "custom_components" / "shutter_pilot" / "logic.py"
 )
 logic = importlib.util.module_from_spec(_spec)
+sys.modules[_spec.name] = logic
 _spec.loader.exec_module(logic)
 
 TZ = timezone.utc
