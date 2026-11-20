@@ -1,0 +1,546 @@
+{
+  "title": "Shutter Pilot",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Shutter Pilot",
+        "description": "Sets up the central shutter automation. Afterwards add shutters with 'Add shutter' and adjust times and alarms under 'Configure' – or in the 'Shutter Pilot' sidebar panel."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Shutter Pilot is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Shutter Pilot – settings",
+        "menu_options": {
+          "area_living": "Living area",
+          "area_sleep": "Sleeping area",
+          "area_children": "Children's area",
+          "astro": "Astro & delays",
+          "days": "Workdays, holidays, vacation",
+          "seasons": "Summer & Christmas",
+          "brightness": "Brightness sensor",
+          "special": "Special times",
+          "alarms": "Alarms",
+          "behaviour": "Behaviour & manual mode"
+        }
+      },
+      "area_living": {
+        "title": "Living area",
+        "description": "Times for all shutters assigned to this area.",
+        "data": {
+          "living_mode": "Automatic type",
+          "living_down_week": "Close (workweek)",
+          "living_up_week_min": "Earliest opening (week)",
+          "living_up_week_max": "Latest opening (week)",
+          "living_down_weekend": "Close (weekend/holiday)",
+          "living_up_weekend_min": "Earliest opening (weekend)",
+          "living_up_weekend_max": "Latest opening (weekend)",
+          "living_stagger": "Delay between shutters",
+          "living_school_holiday": "School holidays = weekend times"
+        },
+        "data_description": {
+          "living_mode": "Fixed time, sunrise/sunset or golden hour – always limited by the times below.",
+          "living_down_week": "Latest close time when tomorrow is a workday (also on Sundays).",
+          "living_down_weekend": "Used when tomorrow is free – so also on Fridays.",
+          "living_stagger": "Seconds between two shutters of this area (less radio traffic)."
+        }
+      },
+      "area_sleep": {
+        "title": "Sleeping area",
+        "description": "Times for all shutters assigned to this area.",
+        "data": {
+          "sleep_mode": "Automatic type",
+          "sleep_down_week": "Close (workweek)",
+          "sleep_up_week_min": "Earliest opening (week)",
+          "sleep_up_week_max": "Latest opening (week)",
+          "sleep_down_weekend": "Close (weekend/holiday)",
+          "sleep_up_weekend_min": "Earliest opening (weekend)",
+          "sleep_up_weekend_max": "Latest opening (weekend)",
+          "sleep_stagger": "Delay between shutters",
+          "sleep_school_holiday": "School holidays = weekend times"
+        },
+        "data_description": {
+          "sleep_mode": "Fixed time, sunrise/sunset or golden hour – always limited by the times below.",
+          "sleep_down_week": "Latest close time when tomorrow is a workday (also on Sundays).",
+          "sleep_down_weekend": "Used when tomorrow is free – so also on Fridays.",
+          "sleep_stagger": "Seconds between two shutters of this area (less radio traffic)."
+        }
+      },
+      "area_children": {
+        "title": "Children's area",
+        "description": "Times for all shutters assigned to this area.",
+        "data": {
+          "children_mode": "Automatic type",
+          "children_down_week": "Close (workweek)",
+          "children_up_week_min": "Earliest opening (week)",
+          "children_up_week_max": "Latest opening (week)",
+          "children_down_weekend": "Close (weekend/holiday)",
+          "children_up_weekend_min": "Earliest opening (weekend)",
+          "children_up_weekend_max": "Latest opening (weekend)",
+          "children_stagger": "Delay between shutters",
+          "children_school_holiday": "School holidays = weekend times"
+        },
+        "data_description": {
+          "children_mode": "Fixed time, sunrise/sunset or golden hour – always limited by the times below.",
+          "children_down_week": "Latest close time when tomorrow is a workday (also on Sundays).",
+          "children_down_weekend": "Used when tomorrow is free – so also on Fridays.",
+          "children_stagger": "Seconds between two shutters of this area (less radio traffic)."
+        }
+      },
+      "astro": {
+        "title": "Astro & delays",
+        "data": {
+          "astro_offset_up": "Astro offset opening",
+          "astro_offset_down": "Astro offset closing",
+          "sun_end_elevation": "Sun protection ends below elevation",
+          "stagger": "Delay (general)"
+        },
+        "data_description": {
+          "astro_offset_up": "Minutes added to sunrise/golden hour.",
+          "astro_offset_down": "Minutes added to sunset/golden hour.",
+          "sun_end_elevation": "Compensates for shade from buildings or trees.",
+          "stagger": "Seconds between shutters for astro, brightness and group commands."
+        }
+      },
+      "days": {
+        "title": "Workdays, holidays, vacation",
+        "data": {
+          "workday_entity": "Workday sensor (today)",
+          "workday_tomorrow_entity": "Workday sensor (tomorrow)",
+          "saturday_is_workday": "Saturday is a workday",
+          "vacation_entity": "Vacation (entity)",
+          "school_holiday_entity": "School holidays (entity)"
+        },
+        "data_description": {
+          "workday_entity": "E.g. the Workday integration – detects public holidays. Empty = only Sat/Sun free.",
+          "workday_tomorrow_entity": "Workday with day offset 1 – closes later before holidays.",
+          "vacation_entity": "When on: weekend times. There is also a 'Vacation' switch.",
+          "school_holiday_entity": "Calendar or switch; enables weekend opening for areas with the school-holiday option."
+        }
+      },
+      "seasons": {
+        "title": "Summer & Christmas",
+        "data": {
+          "summer_start": "Summer start (DD.MM.)",
+          "summer_end": "Summer end (DD.MM.)",
+          "xmas_start": "Christmas start (DD.MM.)",
+          "xmas_end": "Christmas end (DD.MM.)"
+        },
+        "data_description": {}
+      },
+      "brightness": {
+        "title": "Brightness sensor",
+        "data": {
+          "brightness_entity": "Brightness sensor",
+          "brightness_close": "Close below",
+          "brightness_open": "Open above",
+          "brightness_delay": "Minimum duration"
+        },
+        "data_description": {
+          "brightness_delay": "How long the value must hold before moving (against clouds)."
+        }
+      },
+      "special": {
+        "title": "Special times",
+        "data": {
+          "late_close_time": "Late close at",
+          "intermediate_close_time": "Close intermediate position at",
+          "min_minutes_since_move": "Open only if last move older than"
+        },
+        "data_description": {
+          "late_close_time": "For shutters with 'Late close' – ignores lockout protection!"
+        }
+      },
+      "alarms": {
+        "title": "Alarms",
+        "data": {
+          "alarm_fire_entity": "Fire: trigger",
+          "alarm_fire_level": "Fire: position",
+          "alarm_rain_entity": "Rain: trigger",
+          "alarm_rain_level": "Rain: position",
+          "alarm_wind1_entity": "Wind level 1: trigger",
+          "alarm_wind1_level": "Wind level 1: position",
+          "alarm_wind2_entity": "Wind level 2: trigger",
+          "alarm_wind2_level": "Wind level 2: position",
+          "alarm_frost_entity": "Frost: trigger",
+          "alarm_frost_level": "Frost: position"
+        },
+        "data_description": {}
+      },
+      "behaviour": {
+        "title": "Behaviour & manual mode",
+        "data": {
+          "wait_time": "Travel / wait time",
+          "position_tolerance": "Position tolerance",
+          "manual_round": "Round known heights to",
+          "manual_reset": "Manual mode ends",
+          "manual_timeout": "Manual mode duration"
+        },
+        "data_description": {
+          "wait_time": "At least the shutter travel time. Moves during this time are not treated as manual.",
+          "manual_round": "Moving by hand to a configured height keeps the automation active."
+        }
+      }
+    },
+    "error": {
+      "invalid_day_month": "Please use DD.MM., e.g. 01.05."
+    }
+  },
+  "config_subentries": {
+    "shutter": {
+      "initiate_flow": {
+        "user": "Add shutter"
+      },
+      "entry_type": "Shutter",
+      "step": {
+        "main": {
+          "title": "Shutter & schedule",
+          "data": {
+            "name": "Name",
+            "cover_entity": "Cover",
+            "up_mode": "Open by",
+            "down_mode": "Close by",
+            "open_level": "Open position",
+            "close_level": "Closed position",
+            "elevation": "Elevation for 'Sun elevation' mode"
+          },
+          "data_description": {
+            "name": "Empty = name of the cover entity.",
+            "open_level": "Home Assistant: 100% = fully open."
+          }
+        },
+        "window": {
+          "title": "Window & door",
+          "data": {
+            "window_entity": "Window/door contact",
+            "tilt_entity": "Tilt contact (optional)",
+            "window_action": "Move on window change",
+            "window_open_level": "Position when window open",
+            "window_tilt_level": "Position when window tilted",
+            "lockout": "Lockout: allowed while window open",
+            "vent_on_close": "Vent position when closing",
+            "drive_after_close": "Catch up after window closes",
+            "window_open_delay": "Delay on opening",
+            "window_close_delay": "Delay on closing"
+          },
+          "data_description": {
+            "tilt_entity": "Separate sensor for 'tilted'. Sensors with state 'tilted' are detected too.",
+            "lockout": "Which direction the automation may move while the window/door is open.",
+            "vent_on_close": "With an open window, close fully first, then move to the window position."
+          }
+        },
+        "sun": {
+          "title": "Sun protection",
+          "data": {
+            "sun_mode": "Sun protection trigger",
+            "sun_level": "Sun protection position",
+            "sun_tilt": "Slat tilt in sun protection",
+            "azimuth": "Window orientation",
+            "azimuth_range": "± range",
+            "out_temp_entity": "Outside temperature",
+            "out_temp_setpoint": "Outside temperature from",
+            "out_temp_hyst": "Hysteresis outside",
+            "in_temp_entity": "Inside temperature",
+            "in_temp_setpoint": "Inside temperature from",
+            "in_temp_hyst": "Hysteresis inside",
+            "light_entity": "Light sensor (optional)",
+            "light_setpoint": "Light from",
+            "light_hyst": "Hysteresis light",
+            "keep_sun": "Keep sun protection until evening",
+            "sun_end_delay": "Sun protection end delay",
+            "heat_protection": "Heat protection (close fully)",
+            "heat_temp": "Heat protection from"
+          },
+          "data_description": {
+            "sun_mode": "All selected triggers must be active. A light sensor is ANDed on top.",
+            "sun_tilt": "For venetian blinds. −1 = do not change.",
+            "azimuth": "0° = north, 90° = east, 180° = south, 270° = west.",
+            "light_hyst": "Example: 30,000 lx and 40% → active until below 18,000 lx."
+          }
+        },
+        "extra": {
+          "title": "Extras & alarms",
+          "data": {
+            "late_close": "Late close",
+            "summer_no_close": "Do not close in summer",
+            "xmas": "Use Christmas position",
+            "xmas_level": "Christmas position",
+            "intermediate": "Intermediate first, fully later",
+            "intermediate_level": "Intermediate position",
+            "alarm_fire": "Fire alarm",
+            "alarm_rain": "Rain alarm",
+            "alarm_wind1": "Wind level 1 alarm",
+            "alarm_wind2": "Wind level 2 alarm",
+            "alarm_frost": "Frost alarm"
+          },
+          "data_description": {}
+        }
+      },
+      "error": {
+        "already_configured": "This cover is already configured.",
+        "invalid_day_month": "Please use DD.MM., e.g. 01.05."
+      },
+      "abort": {
+        "reconfigure_successful": "Shutter saved."
+      }
+    }
+  },
+  "selector": {
+    "mode": {
+      "options": {
+        "time": "Time only",
+        "sun": "Sunrise/sunset",
+        "golden_hour": "Golden hour"
+      }
+    },
+    "up_mode": {
+      "options": {
+        "off": "Off",
+        "living": "Living area",
+        "sleep": "Sleeping area",
+        "children": "Children's area",
+        "living_auto": "Living area (auto switch)",
+        "sleep_auto": "Sleeping area (auto switch)",
+        "children_auto": "Children's area (auto switch)",
+        "sun": "Sunrise/sunset",
+        "elevation": "Sun elevation",
+        "golden_hour": "Golden hour",
+        "brightness": "Brightness sensor",
+        "manual": "Manual only"
+      }
+    },
+    "down_mode": {
+      "options": {
+        "off": "Off",
+        "living": "Living area",
+        "sleep": "Sleeping area",
+        "children": "Children's area",
+        "living_auto": "Living area (auto switch)",
+        "sleep_auto": "Sleeping area (auto switch)",
+        "children_auto": "Children's area (auto switch)",
+        "sun": "Sunrise/sunset",
+        "elevation": "Sun elevation",
+        "golden_hour": "Golden hour",
+        "brightness": "Brightness sensor",
+        "manual": "Manual only"
+      }
+    },
+    "window_action": {
+      "options": {
+        "off": "Off",
+        "open": "Open",
+        "close": "Close",
+        "open_close": "Open and close"
+      }
+    },
+    "lockout": {
+      "options": {
+        "off": "Nothing (fully locked)",
+        "open": "Opening only",
+        "close": "Closing only",
+        "open_close": "Opening and closing"
+      }
+    },
+    "sun_mode": {
+      "options": {
+        "off": "Off",
+        "in_out_temp": "Inside & outside temperature",
+        "azimuth": "Sun position",
+        "all": "Temperatures & sun position",
+        "out_temp_azimuth": "Outside temperature & sun position",
+        "out_temp": "Outside temperature only",
+        "in_temp": "Inside temperature only"
+      }
+    },
+    "manual_round": {
+      "options": {
+        "0": "No rounding",
+        "5": "5%",
+        "10": "10%"
+      }
+    },
+    "manual_reset": {
+      "options": {
+        "next_event": "At next scheduled event",
+        "timeout": "After the duration",
+        "never": "Only manually (resume)"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "hub_status": {
+        "name": "Status",
+        "state": {
+          "workday": "Workday",
+          "free_day": "Day off",
+          "vacation": "Vacation",
+          "alarm": "Alarm"
+        }
+      },
+      "status": {
+        "name": "Automation status",
+        "state": {
+          "none": "Unknown",
+          "up": "Open",
+          "down": "Closed",
+          "intermediate": "Intermediate",
+          "sun_protect": "Sun protection",
+          "heat_protect": "Heat protection",
+          "manual": "Manual",
+          "paused": "Paused",
+          "window_open": "Window open",
+          "window_locked": "Lockout",
+          "fire": "Fire alarm",
+          "rain": "Rain alarm",
+          "wind1": "Wind alarm 1",
+          "wind2": "Wind alarm 2",
+          "frost": "Frost protection"
+        }
+      },
+      "next_up": {
+        "name": "Next opening"
+      },
+      "next_down": {
+        "name": "Next closing"
+      },
+      "living_next_up": {
+        "name": "Living area: next opening"
+      },
+      "living_next_down": {
+        "name": "Living area: next closing"
+      },
+      "sleep_next_up": {
+        "name": "Sleeping area: next opening"
+      },
+      "sleep_next_down": {
+        "name": "Sleeping area: next closing"
+      },
+      "children_next_up": {
+        "name": "Children's area: next opening"
+      },
+      "children_next_down": {
+        "name": "Children's area: next closing"
+      }
+    },
+    "switch": {
+      "vacation": {
+        "name": "Vacation"
+      },
+      "school_holiday": {
+        "name": "School holidays"
+      },
+      "auto_living": {
+        "name": "Auto living area"
+      },
+      "auto_sleep": {
+        "name": "Auto sleeping area"
+      },
+      "auto_children": {
+        "name": "Auto children's area"
+      },
+      "auto_up": {
+        "name": "Open automatically"
+      },
+      "auto_down": {
+        "name": "Close automatically"
+      },
+      "auto_sun": {
+        "name": "Sun protection"
+      }
+    },
+    "button": {
+      "resume": {
+        "name": "Resume automation"
+      },
+      "auto_all": {
+        "name": "All: resume automation"
+      },
+      "open_all": {
+        "name": "All: open"
+      },
+      "close_all": {
+        "name": "All: close"
+      },
+      "sun_protect_all": {
+        "name": "All: sun protection"
+      },
+      "open_living": {
+        "name": "Living area: open"
+      },
+      "close_living": {
+        "name": "Living area: close"
+      },
+      "sun_protect_living": {
+        "name": "Living area: sun protection"
+      },
+      "open_sleep": {
+        "name": "Sleeping area: open"
+      },
+      "close_sleep": {
+        "name": "Sleeping area: close"
+      },
+      "sun_protect_sleep": {
+        "name": "Sleeping area: sun protection"
+      },
+      "open_children": {
+        "name": "Children's area: open"
+      },
+      "close_children": {
+        "name": "Children's area: close"
+      },
+      "sun_protect_children": {
+        "name": "Children's area: sun protection"
+      }
+    }
+  },
+  "exceptions": {
+    "no_shutter_for_entity": {
+      "message": "No Shutter Pilot shutter is configured for this entity."
+    }
+  },
+  "services": {
+    "command": {
+      "name": "Group command",
+      "description": "Opens, closes, sets sun protection or resumes automation for an area.",
+      "fields": {
+        "action": {
+          "name": "Action",
+          "description": "open, close, sun_protect or auto"
+        },
+        "area": {
+          "name": "Area",
+          "description": "all, living, sleep or children"
+        }
+      }
+    },
+    "pause": {
+      "name": "Pause automation",
+      "description": "Holds the shutters in place, e.g. during a party.",
+      "fields": {
+        "entity_id": {
+          "name": "Covers",
+          "description": "Cover entities"
+        },
+        "minutes": {
+          "name": "Minutes",
+          "description": "Empty = until resumed"
+        }
+      }
+    },
+    "resume": {
+      "name": "Resume automation",
+      "description": "Ends manual mode/pause and moves to the automation position.",
+      "fields": {
+        "entity_id": {
+          "name": "Covers",
+          "description": "Cover entities"
+        }
+      }
+    }
+  }
+}

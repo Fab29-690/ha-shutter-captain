@@ -1,0 +1,340 @@
+"""Constants and the field schema shared by config flow, websocket API and panel."""
+
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass, field
+from typing import Any
+
+DOMAIN = "shutter_pilot"
+NAME = "Shutter Pilot"
+VERSION = "1.0.0"
+
+SUBENTRY_SHUTTER = "shutter"
+
+PANEL_URL = "shutter-pilot"
+PANEL_ELEMENT = "shutter-pilot-panel"
+STATIC_URL = "/shutter_pilot_static"
+
+STORAGE_VERSION = 1
+
+AREAS = ("living", "sleep", "children")
+ALARMS = ("fire", "rain", "wind2", "wind1", "frost")
+# Release order after an alarm ends (fire is latched and handled separately).
+ALARM_PRIORITY = ("rain", "wind2", "wind1")
+
+# --- Select option lists -------------------------------------------------
+
+AREA_MODES = ("time", "sun", "golden_hour")
+
+DRIVE_MODES = (
+    "off",
+    "living",
+    "sleep",
+    "children",
+    "living_auto",
+    "sleep_auto",
+    "children_auto",
+    "sun",
+    "elevation",
+    "golden_hour",
+    "brightness",
+    "manual",
+)
+
+WINDOW_ACTIONS = ("off", "open", "close", "open_close")
+LOCKOUT_MODES = ("off", "open", "close", "open_close")
+
+SUN_MODES = (
+    "off",
+    "in_out_temp",
+    "azimuth",
+    "all",
+    "out_temp_azimuth",
+    "out_temp",
+    "in_temp",
+)
+
+MANUAL_RESET_MODES = ("next_event", "timeout", "never")
+
+# --- Shutter states (sensor enum) ----------------------------------------
+
+STATE_NONE = "none"
+STATE_UP = "up"
+STATE_DOWN = "down"
+STATE_INTERMEDIATE = "intermediate"
+STATE_SUN = "sun_protect"
+STATE_HEAT = "heat_protect"
+STATE_MANUAL = "manual"
+STATE_TRIGGERED = "window_open"
+STATE_LOCKED = "window_locked"
+STATE_PAUSED = "paused"
+
+SHUTTER_STATES = (
+    STATE_NONE,
+    STATE_UP,
+    STATE_DOWN,
+    STATE_INTERMEDIATE,
+    STATE_SUN,
+    STATE_HEAT,
+    STATE_MANUAL,
+    STATE_PAUSED,
+    STATE_TRIGGERED,
+    STATE_LOCKED,
+    *ALARMS,
+)
+
+SIGNAL_UPDATE = f"{DOMAIN}_update_{{}}"
+
+
+# --- Field metadata -------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class Field:
+    """One configurable value.
+
+    The same definition builds the HA config-flow forms and the panel editor,
+    so both always offer exactly the same settings.
+    """
+
+    key: str
+    kind: str  # bool | int | float | time | select | entity | text | daymonth
+    default: Any = None
+    options: tuple[str, ...] = ()
+    min: float | None = None
+    max: float | None = None
+    step: float | None = None
+    unit: str | None = None
+    domains: tuple[str, ...] = ()
+    optional: bool = False
+    show_if: tuple[str, tuple[Any, ...]] | None = None  # (key, allowed values)
+
+    def as_dict(self) -> dict[str, Any]:
+        """Serialise for the websocket API."""
+        data = asdict(self)
+        data["options"] = list(self.options)
+        data["domains"] = list(self.domains)
+        if self.show_if:
+            data["show_if"] = {"key": self.show_if[0], "values": list(self.show_if[1])}
+        return data
+
+
+def _pct(key: str, default: int, **kw: Any) -> Field:
+    return Field(key, "int", default, min=0, max=100, step=1, unit="%", **kw)
+
+
+def _area_fields(area: str, d: dict[str, str]) -> list[Field]:
+    return [
+        Field(f"{area}_mode", "select", "sun", options=AREA_MODES),
+        Field(f"{area}_down_week", "time", d["down_week"]),
+        Field(f"{area}_up_week_min", "time", d["up_week_min"]),
+        Field(f"{area}_up_week_max", "time", d["up_week_max"]),
+        Field(f"{area}_down_weekend", "time", d["down_weekend"]),
+        Field(f"{area}_up_weekend_min", "time", d["up_weekend_min"]),
+        Field(f"{area}_up_weekend_max", "time", d["up_weekend_max"]),
+        Field(f"{area}_stagger", "int", 1, min=0, max=600, step=1, unit="s"),
+        Field(f"{area}_school_holiday", "bool", area == "children"),
+    ]
+
+
+_AREA_DEFAULTS = {
+    "living": {
+        "down_week": "21:00:00",
+        "up_week_min": "06:30:00",
+        "up_week_max": "08:00:00",
+        "down_weekend": "21:30:00",
+        "up_weekend_min": "08:00:00",
+        "up_weekend_max": "09:30:00",
+    },
+    "sleep": {
+        "down_week": "20:30:00",
+        "up_week_min": "06:30:00",
+        "up_week_max": "08:00:00",
+        "down_weekend": "21:00:00",
+        "up_weekend_min": "09:00:00",
+        "up_weekend_max": "10:30:00",
+    },
+    "children": {
+        "down_week": "19:30:00",
+        "up_week_min": "06:30:00",
+        "up_week_max": "07:30:00",
+        "down_weekend": "20:00:00",
+        "up_weekend_min": "08:00:00",
+        "up_weekend_max": "09:00:00",
+    },
+}
+
+_ALARM_DEFAULT_LEVEL = {"fire": 100, "rain": 0, "wind2": 100, "wind1": 100, "frost": 10}
+
+GLOBAL_SECTIONS: dict[str, list[Field]] = {
+    "area_living": _area_fields("living", _AREA_DEFAULTS["living"]),
+    "area_sleep": _area_fields("sleep", _AREA_DEFAULTS["sleep"]),
+    "area_children": _area_fields("children", _AREA_DEFAULTS["children"]),
+    "astro": [
+        Field("astro_offset_up", "int", 0, min=-180, max=180, step=1, unit="min"),
+        Field("astro_offset_down", "int", 0, min=-180, max=180, step=1, unit="min"),
+        Field("sun_end_elevation", "float", 10, min=-10, max=90, step=0.5, unit="°"),
+        Field("stagger", "int", 0, min=0, max=600, step=1, unit="s"),
+    ],
+    "days": [
+        Field("workday_entity", "entity", None, domains=("binary_sensor",), optional=True),
+        Field("workday_tomorrow_entity", "entity", None, domains=("binary_sensor",), optional=True),
+        Field("saturday_is_workday", "bool", False),
+        Field(
+            "vacation_entity",
+            "entity",
+            None,
+            domains=("binary_sensor", "input_boolean", "switch", "calendar"),
+            optional=True,
+        ),
+        Field(
+            "school_holiday_entity",
+            "entity",
+            None,
+            domains=("binary_sensor", "input_boolean", "switch", "calendar"),
+            optional=True,
+        ),
+    ],
+    "seasons": [
+        Field("summer_start", "daymonth", "01.05."),
+        Field("summer_end", "daymonth", "30.09."),
+        Field("xmas_start", "daymonth", "01.12."),
+        Field("xmas_end", "daymonth", "06.01."),
+    ],
+    "brightness": [
+        Field("brightness_entity", "entity", None, domains=("sensor",), optional=True),
+        Field("brightness_close", "float", 50, min=0, max=200000, step=1, unit="lx"),
+        Field("brightness_open", "float", 200, min=0, max=200000, step=1, unit="lx"),
+        Field("brightness_delay", "int", 5, min=0, max=120, step=1, unit="min"),
+    ],
+    "special": [
+        Field("late_close_time", "time", "22:30:00"),
+        Field("intermediate_close_time", "time", "22:00:00"),
+        Field("min_minutes_since_move", "int", 0, min=0, max=600, step=1, unit="min"),
+    ],
+    "alarms": [
+        item
+        for alarm in ALARMS
+        for item in (
+            Field(
+                f"alarm_{alarm}_entity",
+                "entity",
+                None,
+                domains=("binary_sensor", "input_boolean", "switch"),
+                optional=True,
+            ),
+            _pct(f"alarm_{alarm}_level", _ALARM_DEFAULT_LEVEL[alarm]),
+        )
+    ],
+    "behaviour": [
+        Field("wait_time", "int", 60, min=5, max=600, step=1, unit="s"),
+        Field("position_tolerance", "int", 3, min=0, max=20, step=1, unit="%"),
+        Field("manual_round", "select", "5", options=("0", "5", "10")),
+        Field("manual_reset", "select", "next_event", options=MANUAL_RESET_MODES),
+        Field(
+            "manual_timeout",
+            "int",
+            120,
+            min=5,
+            max=1440,
+            step=5,
+            unit="min",
+            show_if=("manual_reset", ("timeout",)),
+        ),
+    ],
+}
+
+SHUTTER_SECTIONS: dict[str, list[Field]] = {
+    "main": [
+        Field("name", "text", "", optional=True),
+        Field("cover_entity", "entity", None, domains=("cover",)),
+        Field("up_mode", "select", "living", options=DRIVE_MODES),
+        Field("down_mode", "select", "living", options=DRIVE_MODES),
+        _pct("open_level", 100),
+        _pct("close_level", 0),
+        Field("elevation", "float", 5, min=-10, max=60, step=0.5, unit="°"),
+    ],
+    "window": [
+        Field(
+            "window_entity",
+            "entity",
+            None,
+            domains=("binary_sensor", "sensor", "input_boolean"),
+            optional=True,
+        ),
+        Field(
+            "tilt_entity",
+            "entity",
+            None,
+            domains=("binary_sensor", "sensor", "input_boolean"),
+            optional=True,
+        ),
+        Field("window_action", "select", "open", options=WINDOW_ACTIONS),
+        _pct("window_open_level", 100),
+        _pct("window_tilt_level", 30),
+        Field("lockout", "select", "open", options=LOCKOUT_MODES),
+        Field("vent_on_close", "bool", False),
+        Field("drive_after_close", "bool", True),
+        Field("window_open_delay", "int", 0, min=0, max=600, step=1, unit="s"),
+        Field("window_close_delay", "int", 0, min=0, max=600, step=1, unit="s"),
+    ],
+    "sun": [
+        Field("sun_mode", "select", "off", options=SUN_MODES),
+        _pct("sun_level", 30),
+        Field("sun_tilt", "int", -1, min=-1, max=100, step=1, unit="%"),
+        Field("azimuth", "int", 180, min=0, max=359, step=1, unit="°"),
+        Field("azimuth_range", "int", 50, min=5, max=180, step=1, unit="°"),
+        Field("out_temp_entity", "entity", None, domains=("sensor", "weather"), optional=True),
+        Field("out_temp_setpoint", "float", 23, min=-30, max=60, step=0.5, unit="°C"),
+        Field("out_temp_hyst", "int", 5, min=0, max=50, step=1, unit="%"),
+        Field("in_temp_entity", "entity", None, domains=("sensor", "climate"), optional=True),
+        Field("in_temp_setpoint", "float", 22, min=0, max=40, step=0.5, unit="°C"),
+        Field("in_temp_hyst", "int", 5, min=0, max=50, step=1, unit="%"),
+        Field("light_entity", "entity", None, domains=("sensor",), optional=True),
+        Field("light_setpoint", "float", 30000, min=0, max=200000, step=100, unit="lx"),
+        Field("light_hyst", "int", 40, min=0, max=90, step=1, unit="%"),
+        Field("keep_sun", "bool", False),
+        Field("sun_end_delay", "int", 0, min=0, max=120, step=1, unit="min"),
+        Field("heat_protection", "bool", False),
+        Field("heat_temp", "float", 30, min=15, max=50, step=0.5, unit="°C"),
+    ],
+    "extra": [
+        Field("late_close", "bool", False),
+        Field("summer_no_close", "bool", False),
+        Field("xmas", "bool", False),
+        _pct("xmas_level", 30),
+        Field("intermediate", "bool", False),
+        _pct("intermediate_level", 50),
+        Field("alarm_fire", "bool", False),
+        Field("alarm_rain", "bool", False),
+        Field("alarm_wind1", "bool", False),
+        Field("alarm_wind2", "bool", False),
+        Field("alarm_frost", "bool", False),
+    ],
+}
+
+
+def defaults(sections: dict[str, list[Field]]) -> dict[str, Any]:
+    """Default value for every field of a section map."""
+    return {f.key: f.default for fields in sections.values() for f in fields}
+
+
+def all_fields(sections: dict[str, list[Field]]) -> dict[str, Field]:
+    """Flat key -> field lookup."""
+    return {f.key: f for fields in sections.values() for f in fields}
+
+
+GLOBAL_DEFAULTS = defaults(GLOBAL_SECTIONS)
+SHUTTER_DEFAULTS = defaults(SHUTTER_SECTIONS)
+GLOBAL_FIELDS = all_fields(GLOBAL_SECTIONS)
+SHUTTER_FIELDS = all_fields(SHUTTER_SECTIONS)
+
+# Hub-wide switches (persisted runtime flags)
+HUB_FLAGS = ("vacation", "school_holiday", "auto_living", "auto_sleep", "auto_children")
+HUB_FLAG_DEFAULTS = {
+    "vacation": False,
+    "school_holiday": False,
+    "auto_living": True,
+    "auto_sleep": True,
+    "auto_children": True,
+}

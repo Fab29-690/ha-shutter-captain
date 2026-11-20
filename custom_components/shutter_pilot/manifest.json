@@ -1,0 +1,14 @@
+{
+  "domain": "shutter_pilot",
+  "name": "Shutter Pilot",
+  "codeowners": ["@Fab29-690"],
+  "config_flow": true,
+  "dependencies": ["frontend", "http", "panel_custom", "websocket_api"],
+  "documentation": "https://github.com/Fab29-690/ha-shutter-pilot",
+  "integration_type": "hub",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/Fab29-690/ha-shutter-pilot/issues",
+  "requirements": [],
+  "single_config_entry": true,
+  "version": "1.0.0"
+}

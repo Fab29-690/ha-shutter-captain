@@ -1,0 +1,546 @@
+{
+  "title": "Shutter Pilot",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Shutter Pilot",
+        "description": "Richtet die zentrale Rollladen-Automatik ein. Rollläden fügst du danach mit „Rollladen hinzufügen“ hinzu, Zeiten und Alarme stellst du unter „Konfigurieren“ ein – oder bequem im Seitenleisten-Panel „Shutter Pilot“."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Shutter Pilot ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Shutter Pilot – Einstellungen",
+        "menu_options": {
+          "area_living": "Wohnbereich",
+          "area_sleep": "Schlafbereich",
+          "area_children": "Kinderbereich",
+          "astro": "Astro & Versatz",
+          "days": "Arbeitstage, Feiertage, Urlaub",
+          "seasons": "Sommer & Weihnachten",
+          "brightness": "Helligkeitssensor",
+          "special": "Sonderzeiten",
+          "alarms": "Alarme",
+          "behaviour": "Verhalten & Handbetrieb"
+        }
+      },
+      "area_living": {
+        "title": "Wohnbereich",
+        "description": "Zeiten für alle Rollläden, die diesem Bereich zugeordnet sind.",
+        "data": {
+          "living_mode": "Art der Automatik",
+          "living_down_week": "Schließen (Arbeitswoche)",
+          "living_up_week_min": "Früheste Öffnung (Woche)",
+          "living_up_week_max": "Späteste Öffnung (Woche)",
+          "living_down_weekend": "Schließen (Wochenende/Feiertag)",
+          "living_up_weekend_min": "Früheste Öffnung (Wochenende)",
+          "living_up_weekend_max": "Späteste Öffnung (Wochenende)",
+          "living_stagger": "Versatz zwischen den Rollläden",
+          "living_school_holiday": "Schulferien = Wochenendzeiten"
+        },
+        "data_description": {
+          "living_mode": "Nur Zeit, Sonnenauf-/-untergang oder Golden Hour – jeweils begrenzt durch die Zeiten unten.",
+          "living_down_week": "Spätester Zeitpunkt zum Schließen, wenn morgen ein Arbeitstag ist (gilt auch sonntags).",
+          "living_down_weekend": "Gilt, wenn morgen frei ist – also auch freitags.",
+          "living_stagger": "Sekunden zwischen zwei Rollläden dieses Bereichs (Funkentlastung)."
+        }
+      },
+      "area_sleep": {
+        "title": "Schlafbereich",
+        "description": "Zeiten für alle Rollläden, die diesem Bereich zugeordnet sind.",
+        "data": {
+          "sleep_mode": "Art der Automatik",
+          "sleep_down_week": "Schließen (Arbeitswoche)",
+          "sleep_up_week_min": "Früheste Öffnung (Woche)",
+          "sleep_up_week_max": "Späteste Öffnung (Woche)",
+          "sleep_down_weekend": "Schließen (Wochenende/Feiertag)",
+          "sleep_up_weekend_min": "Früheste Öffnung (Wochenende)",
+          "sleep_up_weekend_max": "Späteste Öffnung (Wochenende)",
+          "sleep_stagger": "Versatz zwischen den Rollläden",
+          "sleep_school_holiday": "Schulferien = Wochenendzeiten"
+        },
+        "data_description": {
+          "sleep_mode": "Nur Zeit, Sonnenauf-/-untergang oder Golden Hour – jeweils begrenzt durch die Zeiten unten.",
+          "sleep_down_week": "Spätester Zeitpunkt zum Schließen, wenn morgen ein Arbeitstag ist (gilt auch sonntags).",
+          "sleep_down_weekend": "Gilt, wenn morgen frei ist – also auch freitags.",
+          "sleep_stagger": "Sekunden zwischen zwei Rollläden dieses Bereichs (Funkentlastung)."
+        }
+      },
+      "area_children": {
+        "title": "Kinderbereich",
+        "description": "Zeiten für alle Rollläden, die diesem Bereich zugeordnet sind.",
+        "data": {
+          "children_mode": "Art der Automatik",
+          "children_down_week": "Schließen (Arbeitswoche)",
+          "children_up_week_min": "Früheste Öffnung (Woche)",
+          "children_up_week_max": "Späteste Öffnung (Woche)",
+          "children_down_weekend": "Schließen (Wochenende/Feiertag)",
+          "children_up_weekend_min": "Früheste Öffnung (Wochenende)",
+          "children_up_weekend_max": "Späteste Öffnung (Wochenende)",
+          "children_stagger": "Versatz zwischen den Rollläden",
+          "children_school_holiday": "Schulferien = Wochenendzeiten"
+        },
+        "data_description": {
+          "children_mode": "Nur Zeit, Sonnenauf-/-untergang oder Golden Hour – jeweils begrenzt durch die Zeiten unten.",
+          "children_down_week": "Spätester Zeitpunkt zum Schließen, wenn morgen ein Arbeitstag ist (gilt auch sonntags).",
+          "children_down_weekend": "Gilt, wenn morgen frei ist – also auch freitags.",
+          "children_stagger": "Sekunden zwischen zwei Rollläden dieses Bereichs (Funkentlastung)."
+        }
+      },
+      "astro": {
+        "title": "Astro & Versatz",
+        "data": {
+          "astro_offset_up": "Astro-Versatz Öffnen",
+          "astro_offset_down": "Astro-Versatz Schließen",
+          "sun_end_elevation": "Sonnenschutz endet unter Sonnenhöhe",
+          "stagger": "Versatz (allgemein)"
+        },
+        "data_description": {
+          "astro_offset_up": "Minuten, die auf Sonnenaufgang/Golden Hour addiert werden.",
+          "astro_offset_down": "Minuten, die auf Sonnenuntergang/Golden Hour addiert werden.",
+          "sun_end_elevation": "Gleicht Schatten durch Nachbarhäuser oder Bäume aus.",
+          "stagger": "Sekunden zwischen Rollläden bei Astro-, Helligkeits- und Gruppenbefehlen."
+        }
+      },
+      "days": {
+        "title": "Arbeitstage, Feiertage, Urlaub",
+        "data": {
+          "workday_entity": "Arbeitstag-Sensor (heute)",
+          "workday_tomorrow_entity": "Arbeitstag-Sensor (morgen)",
+          "saturday_is_workday": "Samstag ist Arbeitstag",
+          "vacation_entity": "Urlaub (Entität)",
+          "school_holiday_entity": "Schulferien (Entität)"
+        },
+        "data_description": {
+          "workday_entity": "Z. B. die Workday-Integration – erkennt Feiertage. Leer = nur Sa/So frei.",
+          "workday_tomorrow_entity": "Workday mit Tagesversatz 1 – damit vor Feiertagen später geschlossen wird.",
+          "vacation_entity": "Wenn an: Wochenendzeiten. Zusätzlich gibt es den Schalter „Urlaub“.",
+          "school_holiday_entity": "Kalender oder Schalter; aktiviert Wochenend-Öffnung für Bereiche mit Schulferien-Option."
+        }
+      },
+      "seasons": {
+        "title": "Sommer & Weihnachten",
+        "data": {
+          "summer_start": "Sommer Beginn (TT.MM.)",
+          "summer_end": "Sommer Ende (TT.MM.)",
+          "xmas_start": "Weihnachtszeit Beginn (TT.MM.)",
+          "xmas_end": "Weihnachtszeit Ende (TT.MM.)"
+        },
+        "data_description": {}
+      },
+      "brightness": {
+        "title": "Helligkeitssensor",
+        "data": {
+          "brightness_entity": "Helligkeitssensor",
+          "brightness_close": "Schließen unter",
+          "brightness_open": "Öffnen über",
+          "brightness_delay": "Mindestdauer"
+        },
+        "data_description": {
+          "brightness_delay": "So lange muss der Wert anliegen, bevor gefahren wird (gegen Wolken)."
+        }
+      },
+      "special": {
+        "title": "Sonderzeiten",
+        "data": {
+          "late_close_time": "Spät schließen um",
+          "intermediate_close_time": "Zwischenposition komplett schließen um",
+          "min_minutes_since_move": "Öffnen nur, wenn letzte Fahrt älter als"
+        },
+        "data_description": {
+          "late_close_time": "Für Rollläden mit „Spät schließen“ – ignoriert den Aussperrschutz!"
+        }
+      },
+      "alarms": {
+        "title": "Alarme",
+        "data": {
+          "alarm_fire_entity": "Feuer: Auslöser",
+          "alarm_fire_level": "Feuer: Höhe",
+          "alarm_rain_entity": "Regen: Auslöser",
+          "alarm_rain_level": "Regen: Höhe",
+          "alarm_wind1_entity": "Wind Stufe 1: Auslöser",
+          "alarm_wind1_level": "Wind Stufe 1: Höhe",
+          "alarm_wind2_entity": "Wind Stufe 2: Auslöser",
+          "alarm_wind2_level": "Wind Stufe 2: Höhe",
+          "alarm_frost_entity": "Frost: Auslöser",
+          "alarm_frost_level": "Frost: Höhe"
+        },
+        "data_description": {}
+      },
+      "behaviour": {
+        "title": "Verhalten & Handbetrieb",
+        "data": {
+          "wait_time": "Fahrzeit / Wartezeit",
+          "position_tolerance": "Positionstoleranz",
+          "manual_round": "Bekannte Höhen runden auf",
+          "manual_reset": "Handbetrieb endet",
+          "manual_timeout": "Handbetrieb-Dauer"
+        },
+        "data_description": {
+          "wait_time": "Mindestens die Fahrzeit des Rollladens. Bewegungen in dieser Zeit gelten nicht als Handbetrieb.",
+          "manual_round": "Wird von Hand auf eine konfigurierte Höhe gefahren, bleibt die Automatik aktiv."
+        }
+      }
+    },
+    "error": {
+      "invalid_day_month": "Bitte im Format TT.MM. eingeben, z. B. 01.05."
+    }
+  },
+  "config_subentries": {
+    "shutter": {
+      "initiate_flow": {
+        "user": "Rollladen hinzufügen"
+      },
+      "entry_type": "Rollladen",
+      "step": {
+        "main": {
+          "title": "Rollladen & Zeiten",
+          "data": {
+            "name": "Name",
+            "cover_entity": "Rollladen",
+            "up_mode": "Öffnen nach",
+            "down_mode": "Schließen nach",
+            "open_level": "Höhe offen",
+            "close_level": "Höhe geschlossen",
+            "elevation": "Sonnenhöhe für Modus „Sonnenhöhe“"
+          },
+          "data_description": {
+            "name": "Leer = Name der Rollladen-Entität.",
+            "open_level": "Home Assistant: 100 % = ganz offen."
+          }
+        },
+        "window": {
+          "title": "Fenster & Tür",
+          "data": {
+            "window_entity": "Fenster-/Türkontakt",
+            "tilt_entity": "Kipp-Kontakt (optional)",
+            "window_action": "Fahren bei Fensteränderung",
+            "window_open_level": "Höhe bei offenem Fenster",
+            "window_tilt_level": "Höhe bei gekipptem Fenster",
+            "lockout": "Aussperrschutz: erlaubt bei offenem Fenster",
+            "vent_on_close": "Lüftungshöhe beim Schließen",
+            "drive_after_close": "Nach Schließen des Fensters nachfahren",
+            "window_open_delay": "Verzögerung bei Öffnen",
+            "window_close_delay": "Verzögerung bei Schließen"
+          },
+          "data_description": {
+            "tilt_entity": "Separater Sensor für „gekippt“. Sensoren mit Zustand „tilted“ werden auch erkannt.",
+            "lockout": "Welche Richtung die Automatik fahren darf, solange Fenster/Tür offen ist.",
+            "vent_on_close": "Bei offenem Fenster erst ganz schließen, dann auf die Fensterhöhe fahren."
+          }
+        },
+        "sun": {
+          "title": "Sonnenschutz",
+          "data": {
+            "sun_mode": "Sonnenschutz-Auslöser",
+            "sun_level": "Höhe Sonnenschutz",
+            "sun_tilt": "Lamellenwinkel im Sonnenschutz",
+            "azimuth": "Fensterausrichtung",
+            "azimuth_range": "± Bereich",
+            "out_temp_entity": "Außentemperatur",
+            "out_temp_setpoint": "Außentemperatur ab",
+            "out_temp_hyst": "Hysterese außen",
+            "in_temp_entity": "Innentemperatur",
+            "in_temp_setpoint": "Innentemperatur ab",
+            "in_temp_hyst": "Hysterese innen",
+            "light_entity": "Lichtsensor (optional)",
+            "light_setpoint": "Licht ab",
+            "light_hyst": "Hysterese Licht",
+            "keep_sun": "Im Sonnenschutz halten bis abends",
+            "sun_end_delay": "Verzögerung Sonnenschutz-Ende",
+            "heat_protection": "Hitzeschutz (ganz schließen)",
+            "heat_temp": "Hitzeschutz ab"
+          },
+          "data_description": {
+            "sun_mode": "Alle gewählten Auslöser müssen aktiv sein. Ein Lichtsensor wird zusätzlich UND-verknüpft.",
+            "sun_tilt": "Für Jalousien mit Lamellen. −1 = nicht verstellen.",
+            "azimuth": "0° = Nord, 90° = Ost, 180° = Süd, 270° = West.",
+            "light_hyst": "Beispiel: 30.000 lx und 40 % → aktiv bis unter 18.000 lx."
+          }
+        },
+        "extra": {
+          "title": "Extras & Alarme",
+          "data": {
+            "late_close": "Spät schließen",
+            "summer_no_close": "Im Sommer nicht schließen",
+            "xmas": "Weihnachtshöhe verwenden",
+            "xmas_level": "Höhe zur Weihnachtszeit",
+            "intermediate": "Erst Zwischenposition, später ganz",
+            "intermediate_level": "Höhe Zwischenposition",
+            "alarm_fire": "Alarm Feuer",
+            "alarm_rain": "Alarm Regen",
+            "alarm_wind1": "Alarm Wind Stufe 1",
+            "alarm_wind2": "Alarm Wind Stufe 2",
+            "alarm_frost": "Alarm Frost"
+          },
+          "data_description": {}
+        }
+      },
+      "error": {
+        "already_configured": "Dieser Rollladen ist bereits eingerichtet.",
+        "invalid_day_month": "Bitte im Format TT.MM. eingeben, z. B. 01.05."
+      },
+      "abort": {
+        "reconfigure_successful": "Rollladen gespeichert."
+      }
+    }
+  },
+  "selector": {
+    "mode": {
+      "options": {
+        "time": "Nur Zeit",
+        "sun": "Sonnenauf-/-untergang",
+        "golden_hour": "Golden Hour"
+      }
+    },
+    "up_mode": {
+      "options": {
+        "off": "Aus",
+        "living": "Wohnbereich",
+        "sleep": "Schlafbereich",
+        "children": "Kinderbereich",
+        "living_auto": "Wohnbereich (Automatik-Schalter)",
+        "sleep_auto": "Schlafbereich (Automatik-Schalter)",
+        "children_auto": "Kinderbereich (Automatik-Schalter)",
+        "sun": "Sonnenauf-/-untergang",
+        "elevation": "Sonnenhöhe",
+        "golden_hour": "Golden Hour",
+        "brightness": "Helligkeitssensor",
+        "manual": "Nur manuell"
+      }
+    },
+    "down_mode": {
+      "options": {
+        "off": "Aus",
+        "living": "Wohnbereich",
+        "sleep": "Schlafbereich",
+        "children": "Kinderbereich",
+        "living_auto": "Wohnbereich (Automatik-Schalter)",
+        "sleep_auto": "Schlafbereich (Automatik-Schalter)",
+        "children_auto": "Kinderbereich (Automatik-Schalter)",
+        "sun": "Sonnenauf-/-untergang",
+        "elevation": "Sonnenhöhe",
+        "golden_hour": "Golden Hour",
+        "brightness": "Helligkeitssensor",
+        "manual": "Nur manuell"
+      }
+    },
+    "window_action": {
+      "options": {
+        "off": "Aus",
+        "open": "Öffnen",
+        "close": "Schließen",
+        "open_close": "Öffnen und Schließen"
+      }
+    },
+    "lockout": {
+      "options": {
+        "off": "Nichts (komplett gesperrt)",
+        "open": "Nur Öffnen",
+        "close": "Nur Schließen",
+        "open_close": "Öffnen und Schließen"
+      }
+    },
+    "sun_mode": {
+      "options": {
+        "off": "Aus",
+        "in_out_temp": "Innen- & Außentemperatur",
+        "azimuth": "Sonnenstand",
+        "all": "Temperaturen & Sonnenstand",
+        "out_temp_azimuth": "Außentemperatur & Sonnenstand",
+        "out_temp": "Nur Außentemperatur",
+        "in_temp": "Nur Innentemperatur"
+      }
+    },
+    "manual_round": {
+      "options": {
+        "0": "Nicht runden",
+        "5": "5 %",
+        "10": "10 %"
+      }
+    },
+    "manual_reset": {
+      "options": {
+        "next_event": "Beim nächsten Zeitereignis",
+        "timeout": "Nach Ablauf der Dauer",
+        "never": "Nur manuell (Fortsetzen)"
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "hub_status": {
+        "name": "Status",
+        "state": {
+          "workday": "Arbeitstag",
+          "free_day": "Freier Tag",
+          "vacation": "Urlaub",
+          "alarm": "Alarm"
+        }
+      },
+      "status": {
+        "name": "Automatik-Status",
+        "state": {
+          "none": "Unbekannt",
+          "up": "Offen",
+          "down": "Geschlossen",
+          "intermediate": "Zwischenposition",
+          "sun_protect": "Sonnenschutz",
+          "heat_protect": "Hitzeschutz",
+          "manual": "Handbetrieb",
+          "paused": "Pausiert",
+          "window_open": "Fenster offen",
+          "window_locked": "Aussperrschutz",
+          "fire": "Feueralarm",
+          "rain": "Regenalarm",
+          "wind1": "Windalarm 1",
+          "wind2": "Windalarm 2",
+          "frost": "Frostschutz"
+        }
+      },
+      "next_up": {
+        "name": "Nächstes Öffnen"
+      },
+      "next_down": {
+        "name": "Nächstes Schließen"
+      },
+      "living_next_up": {
+        "name": "Wohnbereich: nächstes Öffnen"
+      },
+      "living_next_down": {
+        "name": "Wohnbereich: nächstes Schließen"
+      },
+      "sleep_next_up": {
+        "name": "Schlafbereich: nächstes Öffnen"
+      },
+      "sleep_next_down": {
+        "name": "Schlafbereich: nächstes Schließen"
+      },
+      "children_next_up": {
+        "name": "Kinderbereich: nächstes Öffnen"
+      },
+      "children_next_down": {
+        "name": "Kinderbereich: nächstes Schließen"
+      }
+    },
+    "switch": {
+      "vacation": {
+        "name": "Urlaub"
+      },
+      "school_holiday": {
+        "name": "Schulferien"
+      },
+      "auto_living": {
+        "name": "Automatik Wohnbereich"
+      },
+      "auto_sleep": {
+        "name": "Automatik Schlafbereich"
+      },
+      "auto_children": {
+        "name": "Automatik Kinderbereich"
+      },
+      "auto_up": {
+        "name": "Automatisch öffnen"
+      },
+      "auto_down": {
+        "name": "Automatisch schließen"
+      },
+      "auto_sun": {
+        "name": "Sonnenschutz"
+      }
+    },
+    "button": {
+      "resume": {
+        "name": "Automatik fortsetzen"
+      },
+      "auto_all": {
+        "name": "Alle: Automatik fortsetzen"
+      },
+      "open_all": {
+        "name": "Alle: öffnen"
+      },
+      "close_all": {
+        "name": "Alle: schließen"
+      },
+      "sun_protect_all": {
+        "name": "Alle: Sonnenschutz"
+      },
+      "open_living": {
+        "name": "Wohnbereich: öffnen"
+      },
+      "close_living": {
+        "name": "Wohnbereich: schließen"
+      },
+      "sun_protect_living": {
+        "name": "Wohnbereich: Sonnenschutz"
+      },
+      "open_sleep": {
+        "name": "Schlafbereich: öffnen"
+      },
+      "close_sleep": {
+        "name": "Schlafbereich: schließen"
+      },
+      "sun_protect_sleep": {
+        "name": "Schlafbereich: Sonnenschutz"
+      },
+      "open_children": {
+        "name": "Kinderbereich: öffnen"
+      },
+      "close_children": {
+        "name": "Kinderbereich: schließen"
+      },
+      "sun_protect_children": {
+        "name": "Kinderbereich: Sonnenschutz"
+      }
+    }
+  },
+  "exceptions": {
+    "no_shutter_for_entity": {
+      "message": "Für diese Entität ist kein Shutter-Pilot-Rollladen eingerichtet."
+    }
+  },
+  "services": {
+    "command": {
+      "name": "Gruppenbefehl",
+      "description": "Öffnet, schließt, fährt in den Sonnenschutz oder setzt die Automatik für einen Bereich fort.",
+      "fields": {
+        "action": {
+          "name": "Aktion",
+          "description": "open, close, sun_protect oder auto"
+        },
+        "area": {
+          "name": "Bereich",
+          "description": "all, living, sleep oder children"
+        }
+      }
+    },
+    "pause": {
+      "name": "Automatik pausieren",
+      "description": "Hält die Rollläden an ihrer Position, z. B. während einer Party.",
+      "fields": {
+        "entity_id": {
+          "name": "Rollläden",
+          "description": "Cover-Entitäten"
+        },
+        "minutes": {
+          "name": "Minuten",
+          "description": "Leer = bis Fortsetzen"
+        }
+      }
+    },
+    "resume": {
+      "name": "Automatik fortsetzen",
+      "description": "Beendet Handbetrieb/Pause und fährt sofort auf die Automatik-Position.",
+      "fields": {
+        "entity_id": {
+          "name": "Rollläden",
+          "description": "Cover-Entitäten"
+        }
+      }
+    }
+  }
+}

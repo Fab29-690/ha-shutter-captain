@@ -1,0 +1,49 @@
+command:
+  fields:
+    action:
+      required: true
+      example: close
+      selector:
+        select:
+          options:
+            - open
+            - close
+            - sun_protect
+            - auto
+    area:
+      required: false
+      default: all
+      example: living
+      selector:
+        select:
+          options:
+            - all
+            - living
+            - sleep
+            - children
+
+pause:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          domain: cover
+          multiple: true
+    minutes:
+      required: false
+      example: 120
+      selector:
+        number:
+          min: 1
+          max: 10080
+          unit_of_measurement: min
+
+resume:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          domain: cover
+          multiple: true
