@@ -104,7 +104,7 @@ async def ws_get_config(
     """Schema, labels, global options and every shutter's settings."""
     entry = _entry(hass, msg.get("entry_id"))
     if entry is None:
-        connection.send_error(msg["id"], "not_found", "Shutter Pilot is not set up")
+        connection.send_error(msg["id"], "not_found", "Shutter Captain is not set up")
         return
     shutters = [
         {

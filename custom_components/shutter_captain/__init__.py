@@ -1,4 +1,4 @@
-"""Shutter Pilot – automatic shutter control for Home Assistant."""
+"""Shutter Captain – automatic shutter control for Home Assistant."""
 
 from __future__ import annotations
 
@@ -22,10 +22,10 @@ from .websocket import async_register_websocket
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.BUTTON, Platform.SENSOR, Platform.SWITCH]
+PLATFORMS = [Platform.BUTTON, Platform.COVER, Platform.SENSOR, Platform.SWITCH]
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
-type ShutterPilotConfigEntry = ConfigEntry[ShutterHub]
+type ShutterCaptainConfigEntry = ConfigEntry[ShutterHub]
 
 SERVICE_COMMAND = "command"
 SERVICE_PAUSE = "pause"
@@ -56,7 +56,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ShutterPilotConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: ShutterCaptainConfigEntry) -> bool:
     """Set up the hub and its shutters."""
     hub = ShutterHub(hass, entry)
     entry.runtime_data = hub
@@ -67,7 +67,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ShutterPilotConfigEntry)
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ShutterPilotConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: ShutterCaptainConfigEntry) -> bool:
     """Unload a config entry."""
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
@@ -75,7 +75,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ShutterPilotConfigEntry
     return unloaded
 
 
-async def async_remove_entry(hass: HomeAssistant, entry: ShutterPilotConfigEntry) -> None:
+async def async_remove_entry(hass: HomeAssistant, entry: ShutterCaptainConfigEntry) -> None:
     """Remove the sidebar panel with the last entry."""
     from homeassistant.components import frontend  # noqa: PLC0415
 
@@ -83,7 +83,7 @@ async def async_remove_entry(hass: HomeAssistant, entry: ShutterPilotConfigEntry
         frontend.async_remove_panel(hass, PANEL_URL, warn_if_unknown=False)
 
 
-async def _async_reload(hass: HomeAssistant, entry: ShutterPilotConfigEntry) -> None:
+async def _async_reload(hass: HomeAssistant, entry: ShutterCaptainConfigEntry) -> None:
     """Options or subentries changed."""
     await hass.config_entries.async_reload(entry.entry_id)
 
@@ -91,12 +91,16 @@ async def _async_reload(hass: HomeAssistant, entry: ShutterPilotConfigEntry) -> 
 async def _async_register_panel(hass: HomeAssistant) -> None:
     if PANEL_URL in hass.data.get("frontend_panels", {}):
         return
+    # Cache-buster from the file itself: every changed panel file gets a new URL,
+    # so browsers never keep an outdated panel (also between unreleased builds).
+    panel_file = Path(__file__).parent / "frontend" / "shutter-captain-panel.js"
+    stamp = await hass.async_add_executor_job(lambda: int(panel_file.stat().st_mtime))
     await panel_custom.async_register_panel(
         hass,
         webcomponent_name=PANEL_ELEMENT,
         frontend_url_path=PANEL_URL,
-        module_url=f"{STATIC_URL}/shutter-pilot-panel.js?v={VERSION}",
-        sidebar_title="Shutter Pilot",
+        module_url=f"{STATIC_URL}/shutter-captain-panel.js?v={VERSION}-{stamp}",
+        sidebar_title="Shutter Captain",
         sidebar_icon="mdi:window-shutter-auto",
         require_admin=False,
         config={"domain": DOMAIN},

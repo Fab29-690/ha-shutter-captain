@@ -3,7 +3,7 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = join(dirname(fileURLToPath(import.meta.url)), "..", "custom_components", "shutter_pilot");
+const root = join(dirname(fileURLToPath(import.meta.url)), "..", "custom_components", "shutter_captain");
 
 // [de, en, descDe?, descEn?]
 const AREA = {
@@ -57,6 +57,7 @@ const SHUTTER = {
   cover_entity: ["Rollladen", "Cover"],
   up_mode: ["Öffnen nach", "Open by"],
   down_mode: ["Schließen nach", "Close by"],
+  area: ["Bereich (Gruppe)", "Area (group)", "In welcher Bereichs-Gruppe der Rollladen steuerbar ist. Automatisch = aus „Öffnen/Schließen nach“.", "Which area group the shutter belongs to. Automatic = taken from 'Open/Close by'."],
   open_level: ["Höhe offen", "Open position", "Home Assistant: 100 % = ganz offen.", "Home Assistant: 100% = fully open."],
   close_level: ["Höhe geschlossen", "Closed position"],
   elevation: ["Sonnenhöhe für Modus „Sonnenhöhe“", "Elevation for 'Sun elevation' mode"],
@@ -111,6 +112,7 @@ const SELECTORS = {
     out_temp_azimuth: ["Außentemperatur & Sonnenstand", "Outside temperature & sun position"], out_temp: ["Nur Außentemperatur", "Outside temperature only"], in_temp: ["Nur Innentemperatur", "Inside temperature only"],
   },
   manual_round: { 0: ["Nicht runden", "No rounding"], 5: ["5 %", "5%"], 10: ["10 %", "10%"] },
+  area: { auto: ["Automatisch", "Automatic"], living: ["Wohnbereich", "Living area"], sleep: ["Schlafbereich", "Sleeping area"], children: ["Kinderbereich", "Children's area"], none: ["Keiner", "None"] },
   manual_reset: { next_event: ["Beim nächsten Zeitereignis", "At next scheduled event"], timeout: ["Nach Ablauf der Dauer", "After the duration"], never: ["Nur manuell (Fortsetzen)", "Only manually (resume)"] },
 };
 
@@ -141,6 +143,11 @@ const ENTITIES = {
   },
   button: { resume: { name: ["Automatik fortsetzen", "Resume automation"] }, auto_all: { name: ["Alle: Automatik fortsetzen", "All: resume automation"] } },
 };
+// Group covers are their own devices; the cover takes the device name (good for voice assistants).
+const DEVICES = {
+  group_living: ["Wohnbereich", "Living area"], group_sleep: ["Schlafbereich", "Sleeping area"],
+  group_children: ["Kinderbereich", "Children's area"], group_all: ["Alle Rollläden", "All shutters"],
+};
 const AREA_LABEL = { all: ["Alle", "All"], ...AREA_NAMES };
 const ACTIONS = { open: ["öffnen", "open"], close: ["schließen", "close"], sun_protect: ["Sonnenschutz", "sun protection"] };
 for (const [area, [ad, ae]] of Object.entries(AREA_LABEL))
@@ -165,7 +172,7 @@ function build(i) {
   };
 
   const optionSteps = {
-    init: { title: ["Shutter Pilot – Einstellungen", "Shutter Pilot – settings"][i], menu_options: Object.fromEntries(Object.entries(SECTION_TITLES).filter(([k]) => !["main", "window", "sun", "extra"].includes(k)).map(([k, v]) => [k, v[i]])) },
+    init: { title: ["Shutter Captain – Einstellungen", "Shutter Captain – settings"][i], menu_options: Object.fromEntries(Object.entries(SECTION_TITLES).filter(([k]) => !["main", "window", "sun", "extra"].includes(k)).map(([k, v]) => [k, v[i]])) },
   };
   for (const area of Object.keys(AREA_NAMES)) {
     const keys = Object.keys(AREA).map((k) => `${area}_${k}`);
@@ -183,7 +190,7 @@ function build(i) {
   for (const [s, keys] of Object.entries(globalSections)) optionSteps[s] = { title: SECTION_TITLES[s][i], ...fieldBlock(GLOBAL, keys) };
 
   const shutterSections = {
-    main: ["name", "cover_entity", "up_mode", "down_mode", "open_level", "close_level", "elevation"],
+    main: ["name", "cover_entity", "up_mode", "down_mode", "area", "open_level", "close_level", "elevation"],
     window: ["window_entity", "tilt_entity", "window_action", "window_open_level", "window_tilt_level", "lockout", "vent_on_close", "drive_after_close", "window_open_delay", "window_close_delay"],
     sun: ["sun_mode", "sun_level", "sun_tilt", "azimuth", "azimuth_range", "out_temp_entity", "out_temp_setpoint", "out_temp_hyst", "in_temp_entity", "in_temp_setpoint", "in_temp_hyst", "light_entity", "light_setpoint", "light_hyst", "keep_sun", "sun_end_delay", "heat_protection", "heat_temp"],
     extra: ["late_close", "summer_no_close", "xmas", "xmas_level", "intermediate", "intermediate_level", "alarm_fire", "alarm_rain", "alarm_wind1", "alarm_wind2", "alarm_frost"],
@@ -203,10 +210,10 @@ function build(i) {
   const dmErr = ["Bitte im Format TT.MM. eingeben, z. B. 01.05.", "Please use DD.MM., e.g. 01.05."][i];
 
   return {
-    title: "Shutter Pilot",
+    title: "Shutter Captain",
     config: {
-      step: { user: { title: "Shutter Pilot", description: ["Richtet die zentrale Rollladen-Automatik ein. Rollläden fügst du danach mit „Rollladen hinzufügen“ hinzu, Zeiten und Alarme stellst du unter „Konfigurieren“ ein – oder bequem im Seitenleisten-Panel „Shutter Pilot“.", "Sets up the central shutter automation. Afterwards add shutters with 'Add shutter' and adjust times and alarms under 'Configure' – or in the 'Shutter Pilot' sidebar panel."][i] } },
-      abort: { single_instance_allowed: ["Shutter Pilot ist bereits eingerichtet.", "Shutter Pilot is already set up."][i] },
+      step: { user: { title: "Shutter Captain", description: ["Richtet die zentrale Rollladen-Automatik ein. Rollläden fügst du danach mit „Rollladen hinzufügen“ hinzu, Zeiten und Alarme stellst du unter „Konfigurieren“ ein – oder bequem im Seitenleisten-Panel „Shutter Captain“.", "Sets up the central shutter automation. Afterwards add shutters with 'Add shutter' and adjust times and alarms under 'Configure' – or in the 'Shutter Captain' sidebar panel."][i] } },
+      abort: { single_instance_allowed: ["Shutter Captain ist bereits eingerichtet.", "Shutter Captain is already set up."][i] },
     },
     options: { step: optionSteps, error: { invalid_day_month: dmErr } },
     config_subentries: {
@@ -221,9 +228,11 @@ function build(i) {
     selector: {
       mode: sel(SELECTORS.mode), up_mode: sel(SELECTORS.drive), down_mode: sel(SELECTORS.drive), window_action: sel(SELECTORS.window_action),
       lockout: sel(SELECTORS.lockout), sun_mode: sel(SELECTORS.sun_mode), manual_round: sel(SELECTORS.manual_round), manual_reset: sel(SELECTORS.manual_reset),
+      area: sel(SELECTORS.area),
     },
+    device: Object.fromEntries(Object.entries(DEVICES).map(([k, v]) => [k, { name: v[i] }])),
     entity,
-    exceptions: { no_shutter_for_entity: { message: ["Für diese Entität ist kein Shutter-Pilot-Rollladen eingerichtet.", "No Shutter Pilot shutter is configured for this entity."][i] } },
+    exceptions: { no_shutter_for_entity: { message: ["Für diese Entität ist kein Shutter-Captain-Rollladen eingerichtet.", "No Shutter Captain shutter is configured for this entity."][i] } },
     services: {
       command: {
         name: ["Gruppenbefehl", "Group command"][i],

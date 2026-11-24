@@ -1,8 +1,8 @@
 {
-  "name": "Shutter Pilot",
+  "name": "Shutter Captain",
   "content_in_root": false,
   "render_readme": true,
   "zip_release": true,
-  "filename": "shutter_pilot.zip",
+  "filename": "shutter_captain.zip",
   "homeassistant": "2025.7.0"
 }

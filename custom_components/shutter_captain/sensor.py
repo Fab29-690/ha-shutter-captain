@@ -9,14 +9,14 @@ from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from . import ShutterPilotConfigEntry
+from . import ShutterCaptainConfigEntry
 from .const import AREAS, SHUTTER_STATES
 from .entity import HubEntity, ShutterEntity
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ShutterPilotConfigEntry,
+    entry: ShutterCaptainConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Create sensors."""
@@ -60,7 +60,7 @@ class HubStatusSensor(HubEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Everything the panel needs about the hub."""
-        return {"shutter_pilot": "hub", "entry_id": self.hub.entry.entry_id, **self.hub.summary()}
+        return {"shutter_captain": "hub", "entry_id": self.hub.entry.entry_id, **self.hub.summary()}
 
 
 class AreaTimeSensor(HubEntity, SensorEntity):

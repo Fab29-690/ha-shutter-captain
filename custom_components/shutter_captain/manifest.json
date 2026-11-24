@@ -1,14 +1,14 @@
 {
-  "domain": "shutter_pilot",
-  "name": "Shutter Pilot",
+  "domain": "shutter_captain",
+  "name": "Shutter Captain",
   "codeowners": ["@Fab29-690"],
   "config_flow": true,
   "dependencies": ["frontend", "http", "panel_custom", "websocket_api"],
-  "documentation": "https://github.com/Fab29-690/ha-shutter-pilot",
+  "documentation": "https://github.com/Fab29-690/ha-shutter-captain",
   "integration_type": "hub",
   "iot_class": "calculated",
-  "issue_tracker": "https://github.com/Fab29-690/ha-shutter-pilot/issues",
+  "issue_tracker": "https://github.com/Fab29-690/ha-shutter-captain/issues",
   "requirements": [],
   "single_config_entry": true,
-  "version": "1.0.0"
+  "version": "2.0.0"
 }

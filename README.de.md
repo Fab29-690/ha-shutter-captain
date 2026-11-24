@@ -1,4 +1,4 @@
-# Shutter Pilot – Rollladensteuerung für Home Assistant
+# Shutter Captain – Rollladensteuerung für Home Assistant
 
 Automatische Steuerung von Rollläden, Jalousien und Markisen: Zeitprofile, Sonnenauf- und
 -untergang, Golden Hour, Sonnenschutz nach Sonnenstand und Temperatur, Fensterkontakte mit
@@ -40,29 +40,49 @@ Inspiriert vom ioBroker-Adapter *shuttercontrol*, nativ für Home Assistant neu 
 
 ## Installation
 
-**HACS:** HACS → ⋮ → *Benutzerdefinierte Repositories* → `https://github.com/Fab29-690/ha-shutter-pilot`
-(Typ *Integration*) → *Shutter Pilot* installieren → Home Assistant neu starten →
-*Einstellungen → Geräte & Dienste → Integration hinzufügen → Shutter Pilot*.
+**HACS (empfohlen):**
 
-**Manuell:** `custom_components/shutter_pilot` nach `config/custom_components` kopieren und neu starten.
+1. HACS öffnen, nach **Shutter Captain** suchen und *Herunterladen* klicken.
+2. Home Assistant neu starten.
+3. *Einstellungen → Geräte & Dienste → Integration hinzufügen → Shutter Captain*.
+
+[![In HACS öffnen](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Fab29-690&repository=ha-shutter-captain&category=integration)
+
+Falls Shutter Captain in der HACS-Suche noch nicht auftaucht, als benutzerdefiniertes Repository hinzufügen:
+HACS → ⋮ → *Benutzerdefinierte Repositories* → `https://github.com/Fab29-690/ha-shutter-captain`
+(Typ *Integration*), danach weiter mit Schritt 1.
+
+> **Umstieg von Shutter Pilot 1.x?** Die Integration wurde umbenannt (neue Domain `shutter_captain`).
+> *Shutter Pilot* in HACS und unter *Geräte & Dienste* entfernen, Shutter Captain installieren und neu einrichten.
+
+**Manuell:** `custom_components/shutter_captain` nach `config/custom_components` kopieren und neu starten.
 
 ## Einrichtung
 
-1. In der Seitenleiste **Shutter Pilot** öffnen.
+1. In der Seitenleiste **Shutter Captain** öffnen.
 2. *Einstellungen*: Zeiten der Bereiche prüfen, optional Workday-Sensor, Alarme, Helligkeitssensor.
 3. *Rollläden bearbeiten → Rollladen hinzufügen*.
 
 > **Positionen** wie in Home Assistant: `100 %` = ganz offen, `0 %` = geschlossen.
 
+## Gruppen
+
+Shutter Captain legt automatisch Gruppen-Geräte an (jeweils mit einem gleichnamigen Rollladen, den Alexa,
+Google und Assist unter diesem Namen finden): **Wohnbereich**, **Schlafbereich**, **Kinderbereich**
+(jeweils alle Rollläden, die das Zeitprofil des Bereichs nutzen) und **Alle Rollläden**. Sie zeigen die
+mittlere Position und fahren alle Mitglieder gemeinsam (auf, zu, stopp, Position, Lamellen).
+Wird eine Gruppe auf eine konfigurierte Höhe gefahren (z. B. ganz auf/zu), bleibt die Automatik aktiv;
+bei anderen Positionen gehen die Rollläden in den Handbetrieb.
+
 ## Dienste
 
 ```yaml
-action: shutter_pilot.command          # open | close | sun_protect | auto
+action: shutter_captain.command          # open | close | sun_protect | auto
 data: { action: close, area: living }  # all | living | sleep | children
 
-action: shutter_pilot.pause
+action: shutter_captain.pause
 data: { entity_id: cover.wohnzimmer, minutes: 120 }
 
-action: shutter_pilot.resume
+action: shutter_captain.resume
 data: { entity_id: cover.wohnzimmer }
 ```

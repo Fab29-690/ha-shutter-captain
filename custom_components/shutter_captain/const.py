@@ -5,15 +5,15 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Any
 
-DOMAIN = "shutter_pilot"
-NAME = "Shutter Pilot"
-VERSION = "1.0.0"
+DOMAIN = "shutter_captain"
+NAME = "Shutter Captain"
+VERSION = "2.0.0"
 
 SUBENTRY_SHUTTER = "shutter"
 
-PANEL_URL = "shutter-pilot"
-PANEL_ELEMENT = "shutter-pilot-panel"
-STATIC_URL = "/shutter_pilot_static"
+PANEL_URL = "shutter-captain"
+PANEL_ELEMENT = "shutter-captain-panel"
+STATIC_URL = "/shutter_captain_static"
 
 STORAGE_VERSION = 1
 
@@ -53,6 +53,8 @@ SUN_MODES = (
     "out_temp",
     "in_temp",
 )
+
+GROUP_AREAS = ("auto", "living", "sleep", "children", "none")
 
 MANUAL_RESET_MODES = ("next_event", "timeout", "never")
 
@@ -250,6 +252,7 @@ SHUTTER_SECTIONS: dict[str, list[Field]] = {
         Field("cover_entity", "entity", None, domains=("cover",)),
         Field("up_mode", "select", "living", options=DRIVE_MODES),
         Field("down_mode", "select", "living", options=DRIVE_MODES),
+        Field("area", "select", "auto", options=GROUP_AREAS),
         _pct("open_level", 100),
         _pct("close_level", 0),
         Field("elevation", "float", 5, min=-10, max=60, step=0.5, unit="°"),

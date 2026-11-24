@@ -97,8 +97,8 @@ def clean(fields: list[Field], user_input: dict[str, Any]) -> tuple[dict[str, An
 # --------------------------------------------------------------------- hub
 
 
-class ShutterPilotConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Create the single Shutter Pilot hub."""
+class ShutterCaptainConfigFlow(ConfigFlow, domain=DOMAIN):
+    """Create the single Shutter Captain hub."""
 
     VERSION = 1
 
@@ -112,7 +112,7 @@ class ShutterPilotConfigFlow(ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
         """Global settings."""
-        return ShutterPilotOptionsFlow()
+        return ShutterCaptainOptionsFlow()
 
     @classmethod
     @callback
@@ -126,7 +126,7 @@ class ShutterPilotConfigFlow(ConfigFlow, domain=DOMAIN):
 # ----------------------------------------------------------------- options
 
 
-class ShutterPilotOptionsFlow(OptionsFlow):
+class ShutterCaptainOptionsFlow(OptionsFlow):
     """Menu with one page per settings group."""
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:

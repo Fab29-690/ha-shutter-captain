@@ -1,20 +1,20 @@
 {
-  "title": "Shutter Pilot",
+  "title": "Shutter Captain",
   "config": {
     "step": {
       "user": {
-        "title": "Shutter Pilot",
-        "description": "Richtet die zentrale Rollladen-Automatik ein. Rollläden fügst du danach mit „Rollladen hinzufügen“ hinzu, Zeiten und Alarme stellst du unter „Konfigurieren“ ein – oder bequem im Seitenleisten-Panel „Shutter Pilot“."
+        "title": "Shutter Captain",
+        "description": "Richtet die zentrale Rollladen-Automatik ein. Rollläden fügst du danach mit „Rollladen hinzufügen“ hinzu, Zeiten und Alarme stellst du unter „Konfigurieren“ ein – oder bequem im Seitenleisten-Panel „Shutter Captain“."
       }
     },
     "abort": {
-      "single_instance_allowed": "Shutter Pilot ist bereits eingerichtet."
+      "single_instance_allowed": "Shutter Captain ist bereits eingerichtet."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "Shutter Pilot – Einstellungen",
+        "title": "Shutter Captain – Einstellungen",
         "menu_options": {
           "area_living": "Wohnbereich",
           "area_sleep": "Schlafbereich",
@@ -204,12 +204,14 @@
             "cover_entity": "Rollladen",
             "up_mode": "Öffnen nach",
             "down_mode": "Schließen nach",
+            "area": "Bereich (Gruppe)",
             "open_level": "Höhe offen",
             "close_level": "Höhe geschlossen",
             "elevation": "Sonnenhöhe für Modus „Sonnenhöhe“"
           },
           "data_description": {
             "name": "Leer = Name der Rollladen-Entität.",
+            "area": "In welcher Bereichs-Gruppe der Rollladen steuerbar ist. Automatisch = aus „Öffnen/Schließen nach“.",
             "open_level": "Home Assistant: 100 % = ganz offen."
           }
         },
@@ -369,6 +371,29 @@
         "timeout": "Nach Ablauf der Dauer",
         "never": "Nur manuell (Fortsetzen)"
       }
+    },
+    "area": {
+      "options": {
+        "auto": "Automatisch",
+        "living": "Wohnbereich",
+        "sleep": "Schlafbereich",
+        "children": "Kinderbereich",
+        "none": "Keiner"
+      }
+    }
+  },
+  "device": {
+    "group_living": {
+      "name": "Wohnbereich"
+    },
+    "group_sleep": {
+      "name": "Schlafbereich"
+    },
+    "group_children": {
+      "name": "Kinderbereich"
+    },
+    "group_all": {
+      "name": "Alle Rollläden"
     }
   },
   "entity": {
@@ -500,7 +525,7 @@
   },
   "exceptions": {
     "no_shutter_for_entity": {
-      "message": "Für diese Entität ist kein Shutter-Pilot-Rollladen eingerichtet."
+      "message": "Für diese Entität ist kein Shutter-Captain-Rollladen eingerichtet."
     }
   },
   "services": {

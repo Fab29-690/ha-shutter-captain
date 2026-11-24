@@ -12,7 +12,7 @@ from .shutter import ShutterController
 
 
 class HubEntity(Entity):
-    """Entity on the central 'Shutter Pilot' device."""
+    """Entity on the central 'Shutter Captain' device."""
 
     _attr_has_entity_name = True
     _attr_should_poll = False

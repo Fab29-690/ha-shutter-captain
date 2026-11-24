@@ -6,7 +6,7 @@ from homeassistant.components.button import ButtonEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from . import ShutterPilotConfigEntry
+from . import ShutterCaptainConfigEntry
 from .const import AREAS
 from .entity import HubEntity, ShutterEntity
 
@@ -19,7 +19,7 @@ ACTION_ICONS = {
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ShutterPilotConfigEntry,
+    entry: ShutterCaptainConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Create buttons."""

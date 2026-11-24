@@ -41,5 +41,5 @@ jobs:
       - name: Translations are generated from scripts/build-translations.mjs
         run: |
           node scripts/build-translations.mjs
-          git diff --exit-code custom_components/shutter_pilot/translations
-      - run: node --check custom_components/shutter_pilot/frontend/shutter-pilot-panel.js
+          git diff --exit-code custom_components/shutter_captain/translations
+      - run: node --check custom_components/shutter_captain/frontend/shutter-captain-panel.js

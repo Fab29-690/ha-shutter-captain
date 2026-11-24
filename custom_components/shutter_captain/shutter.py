@@ -261,13 +261,25 @@ class ShutterController:
         return self.desired_state == STATE_INTERMEDIATE
 
     def belongs_to(self, area: str) -> bool:
-        """Shutter uses the time profile of `area`."""
+        """Member of an area group (group devices, area buttons, panel filter).
+
+        An explicitly chosen area wins; "auto" falls back to the time profiles used
+        for opening/closing, so a shutter with opening switched off stays in its room.
+        """
+        chosen = self.cfg.get("area", "auto")
+        if chosen != "auto":
+            return chosen == area
         return any(
             self.cfg[k].removesuffix("_auto") == area for k in ("up_mode", "down_mode")
         )
 
     def area(self) -> str | None:
         """Main area (for grouping in the panel)."""
+        chosen = self.cfg.get("area", "auto")
+        if chosen in AREAS:
+            return chosen
+        if chosen == "none":
+            return None
         for key in ("down_mode", "up_mode"):
             area = self.cfg[key].removesuffix("_auto")
             if area in AREAS:
@@ -868,7 +880,7 @@ class ShutterController:
         """Attributes for the status sensor and the panel."""
         manual_until = self.manual_until if self._manual_active() else None
         return {
-            "shutter_pilot": "shutter",
+            "shutter_captain": "shutter",
             "entry_id": self.hub.entry.entry_id,
             "subentry_id": self.subentry_id,
             "name": self.name,

@@ -1,20 +1,20 @@
 {
-  "title": "Shutter Pilot",
+  "title": "Shutter Captain",
   "config": {
     "step": {
       "user": {
-        "title": "Shutter Pilot",
-        "description": "Sets up the central shutter automation. Afterwards add shutters with 'Add shutter' and adjust times and alarms under 'Configure' – or in the 'Shutter Pilot' sidebar panel."
+        "title": "Shutter Captain",
+        "description": "Sets up the central shutter automation. Afterwards add shutters with 'Add shutter' and adjust times and alarms under 'Configure' – or in the 'Shutter Captain' sidebar panel."
       }
     },
     "abort": {
-      "single_instance_allowed": "Shutter Pilot is already set up."
+      "single_instance_allowed": "Shutter Captain is already set up."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "Shutter Pilot – settings",
+        "title": "Shutter Captain – settings",
         "menu_options": {
           "area_living": "Living area",
           "area_sleep": "Sleeping area",
@@ -204,12 +204,14 @@
             "cover_entity": "Cover",
             "up_mode": "Open by",
             "down_mode": "Close by",
+            "area": "Area (group)",
             "open_level": "Open position",
             "close_level": "Closed position",
             "elevation": "Elevation for 'Sun elevation' mode"
           },
           "data_description": {
             "name": "Empty = name of the cover entity.",
+            "area": "Which area group the shutter belongs to. Automatic = taken from 'Open/Close by'.",
             "open_level": "Home Assistant: 100% = fully open."
           }
         },
@@ -369,6 +371,29 @@
         "timeout": "After the duration",
         "never": "Only manually (resume)"
       }
+    },
+    "area": {
+      "options": {
+        "auto": "Automatic",
+        "living": "Living area",
+        "sleep": "Sleeping area",
+        "children": "Children's area",
+        "none": "None"
+      }
+    }
+  },
+  "device": {
+    "group_living": {
+      "name": "Living area"
+    },
+    "group_sleep": {
+      "name": "Sleeping area"
+    },
+    "group_children": {
+      "name": "Children's area"
+    },
+    "group_all": {
+      "name": "All shutters"
     }
   },
   "entity": {
@@ -500,7 +525,7 @@
   },
   "exceptions": {
     "no_shutter_for_entity": {
-      "message": "No Shutter Pilot shutter is configured for this entity."
+      "message": "No Shutter Captain shutter is configured for this entity."
     }
   },
   "services": {

@@ -1,7 +1,7 @@
-# Shutter Pilot
+# Shutter Captain
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz)
-[![Validate](https://github.com/Fab29-690/ha-shutter-pilot/actions/workflows/validate.yml/badge.svg)](https://github.com/Fab29-690/ha-shutter-pilot/actions/workflows/validate.yml)
+[![Validate](https://github.com/Fab29-690/ha-shutter-captain/actions/workflows/validate.yml/badge.svg)](https://github.com/Fab29-690/ha-shutter-captain/actions/workflows/validate.yml)
 
 **Automatic shutter, blind and awning control for Home Assistant** – time profiles, sunrise/sunset,
 golden hour, sun protection by sun position and temperature, window contacts with lockout
@@ -26,12 +26,13 @@ Inspired by the excellent ioBroker adapter *shuttercontrol*, rebuilt natively fo
 | **Calendar** | Workday sensor (holidays), workday tomorrow, vacation switch/entity, school holidays per area, summer period (don't close), Christmas position, late close, intermediate position. |
 | **Manual detection** | Moving a shutter by hand pauses its automation. Moving it to a known position keeps automation active (with rounding). Ends at the next scheduled event, after a timeout or only on resume – your choice. |
 | **Group commands** | Open / close / sun protection / resume for all or per area – as buttons, services and in the panel. |
+| **Group devices** | One device per area plus *All shutters*, each with a cover named like the device – so Alexa, Google and Assist know it as "Living area". Average position, open/close/stop/position/tilt for every member at once. |
 
 ### Beyond the ioBroker adapter
 
 - **Sidebar panel** with live view: animated shutter, state, *why* it is where it is, next open/close, sun compass per window.
 - **Edit all shutters in one table**, duplicate, delete – and **bulk edit**: select several shutters and change a setting for all of them at once.
-- **Pause** a shutter for 1 h / 3 h / until resumed (service `shutter_pilot.pause`), e.g. for a party.
+- **Pause** a shutter for 1 h / 3 h / until resumed (service `shutter_captain.pause`), e.g. for a party.
 - **Native slat tilt** instead of two entries per blind.
 - **Explainable**: every shutter exposes a `reason` attribute ("window open – lockout blocks the move").
 - **Brightness control with guard**: darkness only closes in the evening and brightness only opens in the morning, after a minimum duration – passing clouds don't close the house.
@@ -42,22 +43,31 @@ Inspired by the excellent ioBroker adapter *shuttercontrol*, rebuilt natively fo
 
 ### HACS (recommended)
 
-1. HACS → ⋮ → *Custom repositories* → `https://github.com/Fab29-690/ha-shutter-pilot`, type *Integration*.
-2. Install **Shutter Pilot**, restart Home Assistant.
-3. *Settings → Devices & services → Add integration → Shutter Pilot*.
+1. Open HACS, search for **Shutter Captain** and click *Download*.
+2. Restart Home Assistant.
+3. *Settings → Devices & services → Add integration → Shutter Captain*.
+
+[![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Fab29-690&repository=ha-shutter-captain&category=integration)
+
+If Shutter Captain does not show up in the HACS search yet, add it as a custom repository:
+HACS → ⋮ → *Custom repositories* → `https://github.com/Fab29-690/ha-shutter-captain`, type *Integration*,
+then continue with step 1.
+
+> **Coming from Shutter Pilot 1.x?** The integration was renamed (new domain `shutter_captain`).
+> Remove *Shutter Pilot* in HACS and under *Devices & services*, install Shutter Captain and set it up again.
 
 ### Manual
 
-Copy `custom_components/shutter_pilot` into your `config/custom_components` folder and restart.
+Copy `custom_components/shutter_captain` into your `config/custom_components` folder and restart.
 
 ## Setup
 
-1. Open **Shutter Pilot** in the sidebar.
+1. Open **Shutter Captain** in the sidebar.
 2. *Settings*: check the times of the three areas, and optionally pick a workday sensor
    ([Workday integration](https://www.home-assistant.io/integrations/workday/)), alarms and a brightness sensor.
 3. *Edit shutters → Add shutter*: choose the cover, how it opens and closes, and optionally window contact and sun protection.
 
-Everything can also be done in *Settings → Devices & services → Shutter Pilot* (Configure = global settings, *Add shutter* / ⋮ *Reconfigure* = per shutter).
+Everything can also be done in *Settings → Devices & services → Shutter Captain* (Configure = global settings, *Add shutter* / ⋮ *Reconfigure* = per shutter).
 
 > **Positions** follow Home Assistant: `100 %` = fully open, `0 %` = closed.
 
@@ -65,7 +75,7 @@ Everything can also be done in *Settings → Devices & services → Shutter Pilo
 
 ## Entities
 
-Hub device *Shutter Pilot*
+Hub device *Shutter Captain*
 
 | Entity | Purpose |
 |---|---|
@@ -83,21 +93,21 @@ button *Resume automation*.
 ## Services
 
 ```yaml
-action: shutter_pilot.command        # open | close | sun_protect | auto
+action: shutter_captain.command        # open | close | sun_protect | auto
 data: { action: close, area: living }  # all | living | sleep | children
 
-action: shutter_pilot.pause
+action: shutter_captain.pause
 data: { entity_id: cover.living_room, minutes: 120 }   # omit minutes = until resumed
 
-action: shutter_pilot.resume
+action: shutter_captain.resume
 data: { entity_id: cover.living_room }
 ```
 
 ## Coming from ioBroker shuttercontrol
 
-| ioBroker | Shutter Pilot |
+| ioBroker | Shutter Captain |
 |---|---|
-| `control.closeAll` / `openLiving` / `sunProtectSleep` … | Buttons on the hub device, service `shutter_pilot.command` |
+| `control.closeAll` / `openLiving` / `sunProtectSleep` … | Buttons on the hub device, service `shutter_captain.command` |
 | `control.autoAll` | Button *All: resume automation* |
 | `control.Holiday` / `schoolfree` | Switches *Vacation* / *School holidays* |
 | `control.autoLiving` … | Switches *Auto living area* … |
@@ -108,8 +118,8 @@ data: { entity_id: cover.living_room }
 
 ## Support
 
-Issues and ideas: [GitHub issues](https://github.com/Fab29-690/ha-shutter-pilot/issues).
-Please attach the diagnostics download (*Devices & services → Shutter Pilot → ⋮ → Download diagnostics*).
+Issues and ideas: [GitHub issues](https://github.com/Fab29-690/ha-shutter-captain/issues).
+Please attach the diagnostics download (*Devices & services → Shutter Captain → ⋮ → Download diagnostics*).
 
 ## License
 

@@ -9,8 +9,7 @@ from typing import TYPE_CHECKING, Any
 
 from astral import Observer, SunDirection, sun as astral_sun
 
-from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
-from homeassistant.core import CoreState, Event, EventStateChangedData, HomeAssistant, callback
+from homeassistant.core import Event, EventStateChangedData, HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import (
     async_track_point_in_time,
@@ -18,6 +17,7 @@ from homeassistant.helpers.event import (
     async_track_time_change,
     async_track_time_interval,
 )
+from homeassistant.helpers.start import async_at_started
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
@@ -85,16 +85,12 @@ class ShutterHub:
             ctrl.restore(saved_shutters.get(subentry_id, {}))
             self.shutters[subentry_id] = ctrl
 
-        if self.hass.state is CoreState.running:
+        async def _started(_hass: HomeAssistant) -> None:
             await self._async_start()
-        else:
 
-            async def _started(_event: Event) -> None:
-                await self._async_start()
-
-            self._unsubs.append(
-                self.hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, _started)
-            )
+        # Runs now if HA is already up, otherwise once it has started; the returned
+        # unsubscribe is safe to call even after it fired (unload/reload).
+        self._unsubs.append(async_at_started(self.hass, _started))
 
     async def _async_start(self) -> None:
         self.started = True

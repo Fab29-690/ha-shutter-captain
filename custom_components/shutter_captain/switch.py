@@ -9,7 +9,7 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from . import ShutterPilotConfigEntry
+from . import ShutterCaptainConfigEntry
 from .const import HUB_FLAGS
 from .entity import HubEntity, ShutterEntity
 
@@ -29,7 +29,7 @@ AUTO_ICONS = {
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ShutterPilotConfigEntry,
+    entry: ShutterCaptainConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Create switches."""

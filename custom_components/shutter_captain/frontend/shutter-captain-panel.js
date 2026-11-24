@@ -1,14 +1,15 @@
-/* Shutter Pilot – sidebar panel for Home Assistant.
+/* Shutter Captain – sidebar panel for Home Assistant.
  * Plain web component (no build step). Uses Home Assistant theme variables,
  * so light and dark themes work automatically.
  */
 
-const DOMAIN = "shutter_pilot";
+const DOMAIN = "shutter_captain";
 const AREAS = ["living", "sleep", "children"];
+const LANG_KEY = "shutter-captain-language";
 
 const T = {
   de: {
-    title: "Shutter Pilot",
+    title: "Shutter Captain",
     overview: "Übersicht",
     shutters: "Rollläden bearbeiten",
     settings: "Einstellungen",
@@ -62,7 +63,7 @@ const T = {
     selected: "ausgewählt",
     empty_title: "Noch keine Rollläden",
     empty_text: "Füge deinen ersten Rollladen hinzu – Zeiten, Sonnenschutz und Fensterkontakt stellst du direkt hier ein.",
-    not_setup: "Shutter Pilot ist noch nicht eingerichtet. Füge die Integration unter Einstellungen → Geräte & Dienste hinzu.",
+    not_setup: "Shutter Captain ist noch nicht eingerichtet. Füge die Integration unter Einstellungen → Geräte & Dienste hinzu.",
     readonly: "Nur Administratoren können Einstellungen ändern.",
     col_name: "Rollladen",
     col_open: "Öffnen",
@@ -78,7 +79,7 @@ const T = {
     alarms: { fire: "Feuer", rain: "Regen", wind1: "Wind 1", wind2: "Wind 2", frost: "Frost" },
   },
   en: {
-    title: "Shutter Pilot",
+    title: "Shutter Captain",
     overview: "Overview",
     shutters: "Edit shutters",
     settings: "Settings",
@@ -132,7 +133,7 @@ const T = {
     selected: "selected",
     empty_title: "No shutters yet",
     empty_text: "Add your first shutter – schedule, sun protection and window contact are set right here.",
-    not_setup: "Shutter Pilot is not set up yet. Add the integration under Settings → Devices & services.",
+    not_setup: "Shutter Captain is not set up yet. Add the integration under Settings → Devices & services.",
     readonly: "Only administrators can change settings.",
     col_name: "Shutter",
     col_open: "Open",
@@ -288,6 +289,10 @@ const CSS = `
 .toolbar .logo { width: 28px; height: 28px; border-radius: 8px; display:grid; place-items:center;
   background: linear-gradient(135deg, #ffb300, #fb8c00); color: #fff; --mdc-icon-size: 18px; }
 .tabs { display: flex; gap: 4px; }
+.langsel { display: inline-flex; align-items: center; gap: 4px; margin-left: 4px; padding: 0 4px 0 8px; border-radius: 999px;
+  background: var(--sp-chip); --mdc-icon-size: 18px; opacity: .85; }
+.langsel select { border: 0; background: transparent; color: inherit; font: inherit; font-size: 13px; padding: 6px 2px; cursor: pointer; outline: none; }
+.langsel select option { background: var(--sp-card); color: var(--primary-text-color); }
 .tab { border: 0; background: transparent; color: inherit; font: inherit; font-size: 14px; padding: 8px 14px;
   border-radius: 999px; cursor: pointer; opacity: .75; display:flex; gap:6px; align-items:center; --mdc-icon-size:18px; }
 .tab:hover { background: var(--sp-chip); opacity: 1; }
@@ -422,13 +427,18 @@ button.chip.on { background: color-mix(in srgb, var(--sp-accent) 18%, transparen
 .searchbox { max-width: 280px; }
 @media (max-width: 720px) {
   .tab .lbl { display: none; }
+  .toolbar { gap: 4px; padding: 0 6px; }
+  .toolbar .title-text { display: none; }
+  .tab { padding: 8px 10px; }
+  .langsel { padding: 0 2px 0 6px; }
+  .langsel select { font-size: 12px; max-width: 74px; }
   main { padding: 12px 10px 96px; }
   .grid { grid-template-columns: 1fr; }
   .table .hide-sm { display: none; }
 }
 `;
 
-class ShutterPilotPanel extends HTMLElement {
+class ShutterCaptainPanel extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
@@ -443,6 +453,8 @@ class ShutterPilotPanel extends HTMLElement {
     this._search = "";
     this._dragging = false;
     this._built = false;
+    this._langPref = "auto";
+    try { this._langPref = localStorage.getItem(LANG_KEY) || "auto"; } catch (_err) { /* private mode */ }
   }
 
   /* ------------------------------------------------------------ HA hooks */
@@ -458,7 +470,7 @@ class ShutterPilotPanel extends HTMLElement {
     if (this._view !== "overview") return;
     // Only redraw when one of our own entities changed.
     const sig = Object.values(hass.states)
-      .filter((st) => st.attributes.shutter_pilot)
+      .filter((st) => st.attributes.shutter_captain)
       .map((st) => st.last_updated)
       .join("|");
     if (sig === this._sig) return;
@@ -470,7 +482,22 @@ class ShutterPilotPanel extends HTMLElement {
   set panel(v) { this._panel = v; }
   set route(v) { this._route = v; }
 
-  get lang() { return (this._hass?.language || "en").startsWith("de") ? "de" : "en"; }
+  get lang() {
+    if (this._langPref === "de" || this._langPref === "en") return this._langPref;
+    return (this._hass?.language || "en").startsWith("de") ? "de" : "en";
+  }
+  get locale() { return this.lang === "de" ? "de-DE" : "en-GB"; }
+
+  _setLanguage(pref) {
+    this._langPref = pref;
+    try { localStorage.setItem(LANG_KEY, pref); } catch (_err) { /* private mode */ }
+    const view = this._view;
+    this._built = false;
+    this._build();
+    this._config = null;
+    this._setView(view);
+    this._loadConfig();
+  }
   t(key) { return T[this.lang][key] ?? T.en[key] ?? key; }
 
   /* --------------------------------------------------------------- shell */
@@ -480,12 +507,18 @@ class ShutterPilotPanel extends HTMLElement {
       <style>${CSS}</style>
       <div class="toolbar">
         <span id="menu"></span>
-        <div class="name"><span class="logo"><ha-icon icon="mdi:window-shutter-auto"></ha-icon></span>${esc(this.t("title"))}</div>
+        <div class="name"><span class="logo"><ha-icon icon="mdi:window-shutter-auto"></ha-icon></span><span class="title-text">${esc(this.t("title"))}</span></div>
         <nav class="tabs">
           <button class="tab" data-view="overview"><ha-icon icon="mdi:view-dashboard-outline"></ha-icon><span class="lbl">${esc(this.t("overview"))}</span></button>
           <button class="tab" data-view="shutters"><ha-icon icon="mdi:pencil-outline"></ha-icon><span class="lbl">${esc(this.t("shutters"))}</span></button>
           <button class="tab" data-view="settings"><ha-icon icon="mdi:cog-outline"></ha-icon><span class="lbl">${esc(this.t("settings"))}</span></button>
         </nav>
+        <label class="langsel" title="Sprache / Language"><ha-icon icon="mdi:translate"></ha-icon>
+          <select id="lang" aria-label="Sprache / Language">
+            <option value="auto" ${this._langPref === "auto" ? "selected" : ""}>Auto</option>
+            <option value="de" ${this._langPref === "de" ? "selected" : ""}>Deutsch</option>
+            <option value="en" ${this._langPref === "en" ? "selected" : ""}>English</option>
+          </select></label>
       </div>
       <main id="main"></main>
       <div class="savebar" id="savebar"><span>${esc(this.t("unsaved"))}</span>
@@ -499,6 +532,7 @@ class ShutterPilotPanel extends HTMLElement {
     this.shadowRoot.getElementById("menu").appendChild(menu);
     this.shadowRoot.querySelectorAll(".tab").forEach((b) =>
       b.addEventListener("click", () => this._setView(b.dataset.view)));
+    this.shadowRoot.getElementById("lang").addEventListener("change", (ev) => this._setLanguage(ev.target.value));
     this.shadowRoot.getElementById("save").addEventListener("click", () => this._save());
     this.shadowRoot.getElementById("discard").addEventListener("click", () => this._discard());
     this._setView("overview");
@@ -521,7 +555,7 @@ class ShutterPilotPanel extends HTMLElement {
 
   async _loadConfig() {
     try {
-      this._config = await this._hass.callWS({ type: `${DOMAIN}/get_config`, language: this._hass.language || "en" });
+      this._config = await this._hass.callWS({ type: `${DOMAIN}/get_config`, language: this.lang });
       this._configError = null;
     } catch (err) {
       this._configError = err;
@@ -544,11 +578,11 @@ class ShutterPilotPanel extends HTMLElement {
 
   /* ----------------------------------------------------------- data */
   _hub() {
-    return Object.values(this._hass.states).find((s) => s.attributes.shutter_pilot === "hub");
+    return Object.values(this._hass.states).find((s) => s.attributes.shutter_captain === "hub");
   }
   _shutterStates() {
     return Object.values(this._hass.states)
-      .filter((s) => s.attributes.shutter_pilot === "shutter")
+      .filter((s) => s.attributes.shutter_captain === "shutter")
       .sort((a, b) => String(a.attributes.name).localeCompare(String(b.attributes.name)));
   }
   _entityOnDevice(statusEntityId, translationKey) {
@@ -562,11 +596,11 @@ class ShutterPilotPanel extends HTMLElement {
     if (!iso) return this.t("no_plan");
     const d = new Date(iso);
     const now = new Date();
-    const time = d.toLocaleTimeString(this._hass.locale?.language || this._hass.language, { hour: "2-digit", minute: "2-digit" });
+    const time = d.toLocaleTimeString(this.locale, { hour: "2-digit", minute: "2-digit" });
     const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1);
     if (d.toDateString() === now.toDateString()) return time;
     if (d.toDateString() === tomorrow.toDateString()) return `${time} <small>${esc(this.t("tomorrow"))}</small>`;
-    return `${d.toLocaleDateString(this._hass.language, { weekday: "short" })} ${time}`;
+    return `${d.toLocaleDateString(this.locale, { weekday: "short" })} ${time}`;
   }
 
   _stateLabel(state) {
@@ -759,7 +793,7 @@ class ShutterPilotPanel extends HTMLElement {
     card.querySelector(".nm").textContent = a.name;
     card.querySelector(".status ha-icon").setAttribute("icon", style.icon);
     let label = this._stateLabel(state);
-    if (a.manual_until) label += ` · ${this.t("until")} ${new Date(a.manual_until).toLocaleTimeString(this._hass.language, { hour: "2-digit", minute: "2-digit" })}`;
+    if (a.manual_until) label += ` · ${this.t("until")} ${new Date(a.manual_until).toLocaleTimeString(this.locale, { hour: "2-digit", minute: "2-digit" })}`;
     card.querySelector(".status span").textContent = label;
     card.querySelector(".reason").textContent = REASONS[this.lang][a.reason] || "";
     card.querySelector(".to").innerHTML = this._fmtTime(a.next_open);
@@ -1146,4 +1180,4 @@ const DEPENDS = {
   ...Object.fromEntries(["fire", "rain", "wind1", "wind2", "frost"].map((a) => [`alarm_${a}_level`, (d) => !!d[`alarm_${a}_entity`]])),
 };
 
-if (!customElements.get("shutter-pilot-panel")) customElements.define("shutter-pilot-panel", ShutterPilotPanel);
+if (!customElements.get("shutter-captain-panel")) customElements.define("shutter-captain-panel", ShutterCaptainPanel);
