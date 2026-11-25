@@ -25,7 +25,10 @@
           "brightness": "Brightness sensor",
           "special": "Special times",
           "alarms": "Alarms",
-          "behaviour": "Behaviour & manual mode"
+          "behaviour": "Behaviour & manual mode",
+          "appearance": "Appearance",
+          "awnings": "Awnings",
+          "garages": "Garage doors"
         }
       },
       "area_living": {
@@ -136,12 +139,15 @@
         "title": "Brightness sensor",
         "data": {
           "brightness_entity": "Brightness sensor",
-          "brightness_close": "Close below",
-          "brightness_open": "Open above",
-          "brightness_delay": "Minimum duration"
+          "brightness_close": "Close below (evening)",
+          "brightness_open": "Open above (morning)",
+          "brightness_delay": "Minimum duration",
+          "brightness_open_from": "Brightness opens from",
+          "brightness_close_from": "Brightness closes from"
         },
         "data_description": {
-          "brightness_delay": "How long the value must hold before moving (against clouds)."
+          "brightness_delay": "How long the value must hold before moving (against clouds).",
+          "brightness_close_from": "Before this time only opening, after it only closing."
         }
       },
       "special": {
@@ -149,15 +155,20 @@
         "data": {
           "late_close_time": "Late close at",
           "intermediate_close_time": "Close intermediate position at",
-          "min_minutes_since_move": "Open only if last move older than"
+          "min_minutes_since_move": "Open only if last move older than",
+          "random_offset": "Presence simulation ±",
+          "random_only_vacation": "Simulation only on vacation"
         },
         "data_description": {
-          "late_close_time": "For shutters with 'Late close' – ignores lockout protection!"
+          "late_close_time": "For shutters with 'Late close' – ignores lockout protection!",
+          "random_offset": "Shifts the times randomly each day by up to this many minutes. 0 = off."
         }
       },
       "alarms": {
         "title": "Alarms",
         "data": {
+          "emergency_entity": "Emergency input",
+          "emergency_level": "Emergency position",
           "alarm_fire_entity": "Fire: trigger",
           "alarm_fire_level": "Fire: position",
           "alarm_rain_entity": "Rain: trigger",
@@ -169,12 +180,16 @@
           "alarm_frost_entity": "Frost: trigger",
           "alarm_frost_level": "Frost: position"
         },
-        "data_description": {}
+        "data_description": {
+          "emergency_entity": "E.g. smoke detector. Highest priority: overrides alarms, manual mode and the main switch for all shutters. Awnings retract.",
+          "emergency_level": "100% = fully open (escape route)."
+        }
       },
       "behaviour": {
         "title": "Behaviour & manual mode",
         "data": {
           "wait_time": "Travel / wait time",
+          "command_gap": "Minimum gap between commands",
           "position_tolerance": "Position tolerance",
           "manual_round": "Round known heights to",
           "manual_reset": "Manual mode ends",
@@ -182,7 +197,99 @@
         },
         "data_description": {
           "wait_time": "At least the shutter travel time. Moves during this time are not treated as manual.",
+          "command_gap": "Applies to all shutters together – never several radio commands at once (Homematic IP duty cycle).",
           "manual_round": "Moving by hand to a configured height keeps the automation active."
+        }
+      },
+      "appearance": {
+        "title": "Appearance",
+        "data": {
+          "accent": "Accent colour",
+          "weather_entity": "Weather entity",
+          "forecast_entity": "Forecast entity"
+        },
+        "data_description": {
+          "accent": "Colour for panel and dashboard card. 'Home Assistant' = your theme colour.",
+          "weather_entity": "Shows rain, snow and clouds in the window of panel and card.",
+          "forecast_entity": "Weather entity with a daily forecast for 'Only if today's forecast reaches'. Empty = weather entity above."
+        }
+      },
+      "awnings": {
+        "title": "Awnings",
+        "data": {
+          "awning_wind_entity": "Wind sensor (awnings)",
+          "awning_wind_speed": "Retract from wind speed",
+          "awning_rain_entity": "Rain sensor (awnings)",
+          "awning_temp_entity": "Outside temperature (awnings)",
+          "awning_frost_temp": "Retract on frost below",
+          "awning_min_temp": "Extend only from",
+          "awning_retract_time": "Retract in the evening at",
+          "awning_sun_end_elevation": "Extending ends below elevation",
+          "awning_emergency_entities": "Emergency: retract",
+          "awning_emergency_alarms": "Also retract on the shutters fire alarm and emergency input",
+          "awning_wait_time": "Travel / wait time",
+          "awning_position_tolerance": "Position tolerance",
+          "awning_manual_round": "Round known heights to",
+          "awning_manual_reset": "Manual mode ends",
+          "awning_manual_timeout": "Manual mode duration"
+        },
+        "data_description": {
+          "awning_wind_entity": "Switch/binary sensor (on = wind) or wind speed in km/h.",
+          "awning_rain_entity": "On/rain or rain amount > 0 → awnings retract.",
+          "awning_frost_temp": "−50 = off.",
+          "awning_min_temp": "On top of sun protection: only extend when at least this warm. 0 = ignore.",
+          "awning_retract_time": "Awnings then stay in until midnight. 00:00 = off (they then retract with the sun).",
+          "awning_sun_end_elevation": "Below this sun elevation awnings retract (shade from buildings or trees).",
+          "awning_emergency_entities": "E.g. smoke detectors (several possible). Highest priority for awnings: they retract at once – even in manual mode or with the main switch off.",
+          "awning_wait_time": "At least the awning travel time. Moves during this time are not treated as manual.",
+          "awning_manual_round": "Moving by hand to a configured height keeps the automation active."
+        }
+      },
+      "garages": {
+        "title": "Garage doors",
+        "data": {
+          "garage_emergency_entities": "Emergency opener",
+          "garage_emergency_alarms": "Emergency opener also on fire alarm and emergency input",
+          "garage_open_level": "Opening height",
+          "garage_close_level": "Closing height",
+          "garage_vent_level": "Vent height",
+          "garage_position_tolerance": "Position tolerance",
+          "garage_auto_close_minutes": "Close automatically after",
+          "garage_close_time": "Close in the evening at",
+          "garage_presence_entity": "Close when everyone left",
+          "garage_arrival_entities": "Open when someone comes home",
+          "garage_open_mode": "Open by condition",
+          "garage_open_entity": "Open: entity",
+          "garage_open_op": "Open: is",
+          "garage_open_value": "Open: value",
+          "garage_close_mode": "Close by condition",
+          "garage_close_entity": "Close: entity",
+          "garage_close_op": "Close: is",
+          "garage_close_value": "Close: value",
+          "garage_light_entity": "Light when opening",
+          "garage_light_minutes": "Light on for (after opening)",
+          "garage_light_off_on_close": "Light off when closing",
+          "garage_light_close_delay": "Delay after closing"
+        },
+        "data_description": {
+          "garage_emergency_entities": "E.g. smoke detectors (several possible). HIGHEST PRIORITY – overrides everything: as soon as one triggers, the garage door always opens fully (escape route) – no matter what else is set, even in manual mode, with the main switch off, conditions or times. While active the door never closes automatically.",
+          "garage_emergency_alarms": "Also opens the garage doors when the fire alarm or the emergency input (Alarms) triggers – with the same highest priority.",
+          "garage_open_level": "How far the automation opens the door (100% = fully). Only for doors that report a position; otherwise it opens fully.",
+          "garage_close_level": "The automation closes the door down to this height (0% = fully closed). Only for doors that report a position; otherwise it closes fully.",
+          "garage_vent_level": "The vent button moves the door to this height. \"Close automatically after\" then waits; closing in the evening, when everyone left or by condition still happens. Needs a door that reports a position.",
+          "garage_position_tolerance": "Deviation in % that still counts as reached (opening, closing and vent height).",
+          "garage_auto_close_minutes": "When the door has been open this long. 0 = off.",
+          "garage_close_time": "Closes open garage doors at this time. 00:00 = off.",
+          "garage_presence_entity": "Person, group or zone: when it changes to away/off, garage doors close.",
+          "garage_arrival_entities": "One or more persons: when one of them changes to home, the garage door opens (if \"opening only allowed while\" is met).",
+          "garage_open_mode": "\"Open when met\": the door opens as soon as the condition becomes true. \"Opening only allowed while\": automatic opening (e.g. on arrival) only while it is true.",
+          "garage_open_value": "For greater/less/equal, e.g. 24 or home.",
+          "garage_close_mode": "\"Close when met\": the door closes as soon as the condition becomes true. \"Closing only allowed while\": automatic closing (time, duration, everyone left) only while it is true.",
+          "garage_close_value": "For greater/less/equal, e.g. 24 or home.",
+          "garage_light_entity": "Turned on as soon as the door opens – also by hand or remote.",
+          "garage_light_minutes": "How long the light stays on after opening before it turns off. 0 = stays on (until closing, if set below).",
+          "garage_light_off_on_close": "Turns the light off once the door is closed – after the delay.",
+          "garage_light_close_delay": "How long the light stays on after closing. 0 = off immediately."
         }
       }
     },
@@ -202,22 +309,31 @@
           "data": {
             "name": "Name",
             "cover_entity": "Cover",
+            "device_type": "Device",
+            "garage_switch_entity": "Door switch (impulse)",
             "up_mode": "Open by",
             "down_mode": "Close by",
             "area": "Area (group)",
             "open_level": "Open position",
             "close_level": "Closed position",
+            "open_tilt": "Slat tilt open",
+            "close_tilt": "Slat tilt closed",
             "elevation": "Elevation for 'Sun elevation' mode"
           },
           "data_description": {
             "name": "Empty = name of the cover entity.",
+            "device_type": "Awning: wind and rain alarms move it to the closed (retracted) position.",
+            "garage_switch_entity": "Optional: switch, button or relay that moves the door (e.g. Shelly with auto-off). Shutter Captain then sends an impulse instead of the cover command; the position still comes from the cover above.",
             "area": "Which area group the shutter belongs to. Automatic = taken from 'Open/Close by'.",
-            "open_level": "Home Assistant: 100% = fully open."
+            "open_level": "Home Assistant: 100% = fully open.",
+            "open_tilt": "−1 = do not change.",
+            "close_tilt": "−1 = do not change."
           }
         },
         "window": {
           "title": "Window & door",
           "data": {
+            "window_profile": "Door/window behaviour",
             "window_entity": "Window/door contact",
             "tilt_entity": "Tilt contact (optional)",
             "window_action": "Move on window change",
@@ -227,9 +343,11 @@
             "vent_on_close": "Vent position when closing",
             "drive_after_close": "Catch up after window closes",
             "window_open_delay": "Delay on opening",
-            "window_close_delay": "Delay on closing"
+            "window_close_delay": "Delay on closing",
+            "vent_level": "Position for the vent button"
           },
           "data_description": {
+            "window_profile": "Terrace door: up when opened, never down while open, back to automation after closing · Vent window: vent position when opened/tilted, at night first closed then vent position · Protection only: no reaction, but never down while open · Custom: the single fields below.",
             "tilt_entity": "Separate sensor for 'tilted'. Sensors with state 'tilted' are detected too.",
             "lockout": "Which direction the automation may move while the window/door is open.",
             "vent_on_close": "With an open window, close fully first, then move to the window position."
@@ -253,7 +371,12 @@
             "light_setpoint": "Light from",
             "light_hyst": "Hysteresis light",
             "keep_sun": "Keep sun protection until evening",
+            "sun_start_delay": "Start sun protection after",
             "sun_end_delay": "Sun protection end delay",
+            "sun_month_from": "Sun protection from month",
+            "sun_month_to": "to month",
+            "forecast_temp": "Only if today's forecast reaches",
+            "weather_conditions": "Only with weather",
             "heat_protection": "Heat protection (close fully)",
             "heat_temp": "Heat protection from"
           },
@@ -261,12 +384,59 @@
             "sun_mode": "All selected triggers must be active. A light sensor is ANDed on top.",
             "sun_tilt": "For venetian blinds. −1 = do not change.",
             "azimuth": "0° = north, 90° = east, 180° = south, 270° = west.",
-            "light_hyst": "Example: 30,000 lx and 40% → active until below 18,000 lx."
+            "light_hyst": "Example: 30,000 lx and 40% → active until below 18,000 lx.",
+            "sun_start_delay": "Sun must shine this long without a break – avoids up and down with passing clouds.",
+            "sun_month_from": "1–12, may wrap the new year, e.g. 4 to 9. Keeps winter sun inside.",
+            "forecast_temp": "Maximum temperature of the weather forecast (weather entity under Settings → Appearance). 0 = ignore.",
+            "weather_conditions": "Empty = ignore. Otherwise the current weather must be one of these."
+          }
+        },
+        "conditions": {
+          "title": "Own conditions",
+          "data": {
+            "cond_mode": "Own condition controls",
+            "cond_logic": "Combine",
+            "cond1_entity": "Condition 1: entity",
+            "cond1_op": "Condition 1: is",
+            "cond1_value": "Condition 1: value",
+            "cond2_entity": "Condition 2: entity",
+            "cond2_op": "Condition 2: is",
+            "cond2_value": "Condition 2: value",
+            "cond_level": "Level for 'close only partly'"
+          },
+          "data_description": {
+            "cond_mode": "Sun protection only when met · evening close only to the level below · don't close · don't open.",
+            "cond1_value": "For greater/less/equal, e.g. 24 or home."
+          }
+        },
+        "stages": {
+          "title": "Closing stages",
+          "data": {
+            "close1_entity": "Stage 1: also close when on",
+            "close1_from": "Stage 1 by entity not before",
+            "close2_enabled": "Second closing stage (night)",
+            "close2_level": "Stage 2: position",
+            "close2_tilt": "Stage 2: slat tilt",
+            "close2_lux": "Stage 2 when brightness below",
+            "close2_lux_entity": "Stage 2: brightness sensor",
+            "close2_lux_minutes": "Stage 2: below for",
+            "close2_entity": "Stage 2 also when on",
+            "close2_from": "Stage 2 not before"
+          },
+          "data_description": {
+            "close1_entity": "E.g. a light turning on. Closes in addition to the time/brightness automation.",
+            "close2_enabled": "After stage 1 moves to a second position/slat angle – only with automation on, no lock and the window closed.",
+            "close2_tilt": "−1 = do not change.",
+            "close2_lux": "0 = not by brightness.",
+            "close2_lux_entity": "Empty = global brightness sensor.",
+            "close2_from": "00:00 = no time limit."
           }
         },
         "extra": {
           "title": "Extras & alarms",
           "data": {
+            "lamp_entity": "Light when closing",
+            "lamp_brightness": "Light brightness",
             "late_close": "Late close",
             "summer_no_close": "Do not close in summer",
             "xmas": "Use Christmas position",
@@ -279,7 +449,9 @@
             "alarm_wind2": "Wind level 2 alarm",
             "alarm_frost": "Frost alarm"
           },
-          "data_description": {}
+          "data_description": {
+            "lamp_entity": "Turned on with automatic closing and off again when opening."
+          }
         }
       },
       "error": {
@@ -372,6 +544,20 @@
         "never": "Only manually (resume)"
       }
     },
+    "awning_manual_round": {
+      "options": {
+        "0": "No rounding",
+        "5": "5%",
+        "10": "10%"
+      }
+    },
+    "awning_manual_reset": {
+      "options": {
+        "next_event": "At next scheduled event",
+        "timeout": "After the duration",
+        "never": "Only manually (resume)"
+      }
+    },
     "area": {
       "options": {
         "auto": "Automatic",
@@ -379,6 +565,120 @@
         "sleep": "Sleeping area",
         "children": "Children's area",
         "none": "None"
+      }
+    },
+    "accent": {
+      "options": {
+        "ha": "Home Assistant",
+        "amber": "Amber",
+        "indigo": "Indigo",
+        "teal": "Teal",
+        "ocean": "Ocean",
+        "forest": "Forest",
+        "rose": "Rose"
+      }
+    },
+    "device_type": {
+      "options": {
+        "shutter": "Shutter / blind",
+        "awning": "Awning",
+        "garage": "Garage door / gate"
+      }
+    },
+    "window_profile": {
+      "options": {
+        "terrace_door": "Terrace door",
+        "vent_window": "Vent window",
+        "protect_only": "Protection only",
+        "custom": "Custom"
+      }
+    },
+    "cond_mode": {
+      "options": {
+        "off": "Off",
+        "sun": "Sun protection only when met",
+        "half_close": "Evening: close only partly",
+        "no_close": "Don't close automatically",
+        "no_open": "Don't open automatically"
+      }
+    },
+    "cond_logic": {
+      "options": {
+        "and": "All met (AND)",
+        "or": "Any met (OR)"
+      }
+    },
+    "cond1_op": {
+      "options": {
+        "on": "on / open / home",
+        "off": "off / closed / away",
+        "gt": "greater than",
+        "lt": "less than",
+        "eq": "equal to",
+        "ne": "not equal to"
+      }
+    },
+    "cond2_op": {
+      "options": {
+        "on": "on / open / home",
+        "off": "off / closed / away",
+        "gt": "greater than",
+        "lt": "less than",
+        "eq": "equal to",
+        "ne": "not equal to"
+      }
+    },
+    "garage_open_op": {
+      "options": {
+        "on": "on / open / home",
+        "off": "off / closed / away",
+        "gt": "greater than",
+        "lt": "less than",
+        "eq": "equal to",
+        "ne": "not equal to"
+      }
+    },
+    "garage_close_op": {
+      "options": {
+        "on": "on / open / home",
+        "off": "off / closed / away",
+        "gt": "greater than",
+        "lt": "less than",
+        "eq": "equal to",
+        "ne": "not equal to"
+      }
+    },
+    "garage_open_mode": {
+      "options": {
+        "off": "Off",
+        "trigger": "Open when met",
+        "allow": "Opening only allowed while"
+      }
+    },
+    "garage_close_mode": {
+      "options": {
+        "off": "Off",
+        "trigger": "Close when met",
+        "allow": "Closing only allowed while"
+      }
+    },
+    "weather_conditions": {
+      "options": {
+        "sunny": "Sunny",
+        "clear-night": "Clear night",
+        "partlycloudy": "Partly cloudy",
+        "cloudy": "Cloudy",
+        "fog": "Fog",
+        "rainy": "Rainy",
+        "pouring": "Pouring",
+        "lightning": "Lightning",
+        "lightning-rainy": "Lightning, rainy",
+        "snowy": "Snowy",
+        "snowy-rainy": "Snowy, rainy",
+        "hail": "Hail",
+        "windy": "Windy",
+        "windy-variant": "Windy, cloudy",
+        "exceptional": "Exceptional"
       }
     }
   },
@@ -420,6 +720,7 @@
           "paused": "Paused",
           "window_open": "Window open",
           "window_locked": "Lockout",
+          "emergency": "Emergency",
           "fire": "Fire alarm",
           "rain": "Rain alarm",
           "wind1": "Wind alarm 1",
@@ -453,6 +754,9 @@
       }
     },
     "switch": {
+      "master": {
+        "name": "Automation (all)"
+      },
       "vacation": {
         "name": "Vacation"
       },
@@ -468,6 +772,9 @@
       "auto_children": {
         "name": "Auto children's area"
       },
+      "automation": {
+        "name": "Automatic"
+      },
       "auto_up": {
         "name": "Open automatically"
       },
@@ -481,6 +788,9 @@
     "button": {
       "resume": {
         "name": "Resume automation"
+      },
+      "vent": {
+        "name": "Vent"
       },
       "auto_all": {
         "name": "All: resume automation"
@@ -535,11 +845,15 @@
       "fields": {
         "action": {
           "name": "Action",
-          "description": "open, close, sun_protect or auto"
+          "description": "open, close, sun_protect, auto or manual"
         },
         "area": {
           "name": "Area",
-          "description": "all, living, sleep or children"
+          "description": "all, living, sleep or children (shutters only)"
+        },
+        "device_type": {
+          "name": "Device type",
+          "description": "shutter, awning or garage – awnings and garage doors: always all of the type"
         }
       }
     },
@@ -554,6 +868,16 @@
         "minutes": {
           "name": "Minutes",
           "description": "Empty = until resumed"
+        }
+      }
+    },
+    "vent": {
+      "name": "Vent",
+      "description": "Moves the shutters to their vent position and holds it until the next scheduled event.",
+      "fields": {
+        "entity_id": {
+          "name": "Covers",
+          "description": "Cover entities"
         }
       }
     },

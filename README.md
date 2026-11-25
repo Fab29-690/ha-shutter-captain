@@ -73,6 +73,33 @@ Everything can also be done in *Settings → Devices & services → Shutter Capt
 
 ![Editor](docs/images/editor.png)
 
+## Dashboard card
+
+The card is loaded automatically – no resource needed. *Edit dashboard → Add card → Shutter Captain*.
+In its editor pick the shutters and groups (or *all shutters*), arrange them with the mouse and set the
+look: layout (grid, list, compact), shape, accent/background/text colour, font, background image
+(upload or URL, with darkening), status chips and the vacation / automatic / manual buttons. The card
+adapts to its width – from phone to large screen.
+
+![Card editor](docs/images/card-editor.png)
+
+![Card](docs/images/card.png)
+
+Under *Settings → Appearance* pick the accent colour and a weather entity – windows in panel and
+card then show the time of day, clouds, rain or snow. Layout *Compact* shows each shutter as a small
+chip (tap opens the controls).
+
+```yaml
+type: custom:shutter-captain-card
+title: Living area
+entities: [cover.living_area, cover.kitchen]   # or all_shutters: true
+layout: grid          # grid | list | chips
+shape: soft           # rounded | soft | square
+color: teal
+font: rounded
+show_vacation: true
+```
+
 ## Entities
 
 Hub device *Shutter Captain*
@@ -90,6 +117,18 @@ Per shutter: `sensor.<name>_automation_status` (with `reason`, `next_open`, `man
 next opening/closing, switches *Open automatically*, *Close automatically*, *Sun protection*,
 button *Resume automation*.
 
+## Event
+
+Every automatic move fires `shutter_captain_cover_moved` with `entity_id`, `name`, `position`,
+`previous_position`, `reason` and `area` – handy for notifications or a log book:
+
+```yaml
+triggers:
+  - trigger: event
+    event_type: shutter_captain_cover_moved
+    event_data: { reason: alarm_wind1 }
+```
+
 ## Services
 
 ```yaml
@@ -100,6 +139,9 @@ action: shutter_captain.pause
 data: { entity_id: cover.living_room, minutes: 120 }   # omit minutes = until resumed
 
 action: shutter_captain.resume
+data: { entity_id: cover.living_room }
+
+action: shutter_captain.vent          # move to the vent position
 data: { entity_id: cover.living_room }
 ```
 

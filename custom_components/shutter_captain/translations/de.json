@@ -25,7 +25,10 @@
           "brightness": "Helligkeitssensor",
           "special": "Sonderzeiten",
           "alarms": "Alarme",
-          "behaviour": "Verhalten & Handbetrieb"
+          "behaviour": "Verhalten & Handbetrieb",
+          "appearance": "Darstellung",
+          "awnings": "Markisen",
+          "garages": "Garagentore"
         }
       },
       "area_living": {
@@ -136,12 +139,15 @@
         "title": "Helligkeitssensor",
         "data": {
           "brightness_entity": "Helligkeitssensor",
-          "brightness_close": "Schließen unter",
-          "brightness_open": "Öffnen über",
-          "brightness_delay": "Mindestdauer"
+          "brightness_close": "Schließen unter (abends)",
+          "brightness_open": "Öffnen über (morgens)",
+          "brightness_delay": "Mindestdauer",
+          "brightness_open_from": "Helligkeit öffnet ab",
+          "brightness_close_from": "Helligkeit schließt ab"
         },
         "data_description": {
-          "brightness_delay": "So lange muss der Wert anliegen, bevor gefahren wird (gegen Wolken)."
+          "brightness_delay": "So lange muss der Wert anliegen, bevor gefahren wird (gegen Wolken).",
+          "brightness_close_from": "Davor wird nur geöffnet, danach nur geschlossen."
         }
       },
       "special": {
@@ -149,15 +155,20 @@
         "data": {
           "late_close_time": "Spät schließen um",
           "intermediate_close_time": "Zwischenposition komplett schließen um",
-          "min_minutes_since_move": "Öffnen nur, wenn letzte Fahrt älter als"
+          "min_minutes_since_move": "Öffnen nur, wenn letzte Fahrt älter als",
+          "random_offset": "Anwesenheitssimulation ±",
+          "random_only_vacation": "Simulation nur im Urlaub"
         },
         "data_description": {
-          "late_close_time": "Für Rollläden mit „Spät schließen“ – ignoriert den Aussperrschutz!"
+          "late_close_time": "Für Rollläden mit „Spät schließen“ – ignoriert den Aussperrschutz!",
+          "random_offset": "Verschiebt die Fahrzeiten täglich zufällig um bis zu so viele Minuten. 0 = aus."
         }
       },
       "alarms": {
         "title": "Alarme",
         "data": {
+          "emergency_entity": "Notfall-Eingang",
+          "emergency_level": "Notfall-Position",
           "alarm_fire_entity": "Feuer: Auslöser",
           "alarm_fire_level": "Feuer: Höhe",
           "alarm_rain_entity": "Regen: Auslöser",
@@ -169,12 +180,16 @@
           "alarm_frost_entity": "Frost: Auslöser",
           "alarm_frost_level": "Frost: Höhe"
         },
-        "data_description": {}
+        "data_description": {
+          "emergency_entity": "Z. B. Rauchmelder. Höchste Priorität: überschreibt Alarme, Handbetrieb und Hauptschalter für alle Rollläden. Markisen fahren ein.",
+          "emergency_level": "100 % = ganz offen (Fluchtweg)."
+        }
       },
       "behaviour": {
         "title": "Verhalten & Handbetrieb",
         "data": {
           "wait_time": "Fahrzeit / Wartezeit",
+          "command_gap": "Mindestabstand zwischen Fahrbefehlen",
           "position_tolerance": "Positionstoleranz",
           "manual_round": "Bekannte Höhen runden auf",
           "manual_reset": "Handbetrieb endet",
@@ -182,7 +197,99 @@
         },
         "data_description": {
           "wait_time": "Mindestens die Fahrzeit des Rollladens. Bewegungen in dieser Zeit gelten nicht als Handbetrieb.",
+          "command_gap": "Gilt für alle Rollläden zusammen – nie mehrere Funkbefehle gleichzeitig (Homematic IP Duty-Cycle).",
           "manual_round": "Wird von Hand auf eine konfigurierte Höhe gefahren, bleibt die Automatik aktiv."
+        }
+      },
+      "appearance": {
+        "title": "Darstellung",
+        "data": {
+          "accent": "Akzentfarbe",
+          "weather_entity": "Wetter-Entität",
+          "forecast_entity": "Vorhersage-Entität"
+        },
+        "data_description": {
+          "accent": "Farbe für Panel und Dashboard-Karte. „Home Assistant“ = Farbe deines Themes.",
+          "weather_entity": "Zeigt Regen, Schnee und Wolken im Fenster von Panel und Karte.",
+          "forecast_entity": "Wetter-Entität mit Tagesvorhersage für „Nur wenn heute erwartet ab“. Leer = Wetter-Entität oben."
+        }
+      },
+      "awnings": {
+        "title": "Markisen",
+        "data": {
+          "awning_wind_entity": "Windsensor (Markisen)",
+          "awning_wind_speed": "Einfahren ab Windgeschwindigkeit",
+          "awning_rain_entity": "Regensensor (Markisen)",
+          "awning_temp_entity": "Außentemperatur (Markisen)",
+          "awning_frost_temp": "Einfahren bei Frost unter",
+          "awning_min_temp": "Ausfahren erst ab",
+          "awning_retract_time": "Abends einfahren um",
+          "awning_sun_end_elevation": "Ausfahren endet unter Sonnenhöhe",
+          "awning_emergency_entities": "Notfall: einfahren",
+          "awning_emergency_alarms": "Auch bei Feueralarm und Notfall-Eingang der Rollläden einfahren",
+          "awning_wait_time": "Fahrzeit / Wartezeit",
+          "awning_position_tolerance": "Positionstoleranz",
+          "awning_manual_round": "Bekannte Höhen runden auf",
+          "awning_manual_reset": "Handbetrieb endet",
+          "awning_manual_timeout": "Handbetrieb-Dauer"
+        },
+        "data_description": {
+          "awning_wind_entity": "Schalter/Binärsensor (an = Wind) oder Windgeschwindigkeit in km/h.",
+          "awning_rain_entity": "An/Regen oder Regenmenge > 0 → Markisen fahren ein.",
+          "awning_frost_temp": "−50 = aus.",
+          "awning_min_temp": "Zusätzlich zum Sonnenschutz: nur ausfahren, wenn es mindestens so warm ist. 0 = egal.",
+          "awning_retract_time": "Danach bleiben Markisen bis Mitternacht eingefahren. 00:00 = aus (eingefahren wird dann mit dem Sonnenstand).",
+          "awning_sun_end_elevation": "Unter dieser Sonnenhöhe fahren Markisen ein (Schatten durch Nachbarhäuser oder Bäume).",
+          "awning_emergency_entities": "Z. B. Rauchmelder (auch mehrere). Höchste Priorität für Markisen: sie fahren sofort ein – auch bei Handbetrieb oder ausgeschaltetem Hauptschalter.",
+          "awning_wait_time": "Mindestens die Fahrzeit der Markise. Bewegungen in dieser Zeit gelten nicht als Handbetrieb.",
+          "awning_manual_round": "Wird von Hand auf eine konfigurierte Höhe gefahren, bleibt die Automatik aktiv."
+        }
+      },
+      "garages": {
+        "title": "Garagentore",
+        "data": {
+          "garage_emergency_entities": "Notfall-Öffner",
+          "garage_emergency_alarms": "Notfall-Öffner auch bei Feueralarm und Notfall-Eingang",
+          "garage_open_level": "Öffnungshöhe",
+          "garage_close_level": "Schließhöhe",
+          "garage_vent_level": "Lüftungshöhe",
+          "garage_position_tolerance": "Positionstoleranz",
+          "garage_auto_close_minutes": "Automatisch schließen nach",
+          "garage_close_time": "Abends schließen um",
+          "garage_presence_entity": "Schließen wenn alle weg",
+          "garage_arrival_entities": "Öffnen wenn jemand heimkommt",
+          "garage_open_mode": "Öffnen per Bedingung",
+          "garage_open_entity": "Öffnen: Entität",
+          "garage_open_op": "Öffnen: ist",
+          "garage_open_value": "Öffnen: Wert",
+          "garage_close_mode": "Schließen per Bedingung",
+          "garage_close_entity": "Schließen: Entität",
+          "garage_close_op": "Schließen: ist",
+          "garage_close_value": "Schließen: Wert",
+          "garage_light_entity": "Licht beim Öffnen",
+          "garage_light_minutes": "Licht an für (nach dem Öffnen)",
+          "garage_light_off_on_close": "Licht aus beim Schließen",
+          "garage_light_close_delay": "Nachlaufzeit nach dem Schließen"
+        },
+        "data_description": {
+          "garage_emergency_entities": "Z. B. Rauchmelder (auch mehrere). HÖCHSTE PRIORITÄT – überschreibt alles: Sobald einer auslöst, fährt das Garagentor auf jeden Fall ganz auf (Fluchtweg) – egal was sonst eingestellt ist, auch bei Handbetrieb, ausgeschaltetem Hauptschalter, Bedingungen oder Zeiten. Solange er aktiv ist, schließt das Tor nicht automatisch.",
+          "garage_emergency_alarms": "Öffnet die Garagentore zusätzlich, wenn der Feueralarm oder der Notfall-Eingang (Alarme) auslöst – mit derselben höchsten Priorität.",
+          "garage_open_level": "So weit öffnet die Automatik das Tor (100 % = ganz auf). Nur bei Toren mit Positionsangabe; sonst fährt das Tor ganz auf.",
+          "garage_close_level": "Bis zu dieser Höhe schließt die Automatik das Tor (0 % = ganz zu). Nur bei Toren mit Positionsangabe; sonst schließt das Tor ganz.",
+          "garage_vent_level": "Der Lüften-Knopf fährt das Tor auf diese Höhe. Das „Automatisch schließen nach“ wartet dann; abends, bei „alle weg“ und per Bedingung wird trotzdem geschlossen. Braucht ein Tor mit Positionsangabe.",
+          "garage_position_tolerance": "So viel % Abweichung gilt noch als „erreicht“ (Öffnungs-, Schließ- und Lüftungshöhe).",
+          "garage_auto_close_minutes": "Wenn das Tor so lange offen steht. 0 = aus.",
+          "garage_close_time": "Schließt offene Garagentore zu dieser Uhrzeit. 00:00 = aus.",
+          "garage_presence_entity": "Person, Gruppe oder Zone: wechselt sie auf abwesend/aus, schließen die Garagentore.",
+          "garage_arrival_entities": "Eine oder mehrere Personen: wechselt eine davon auf „zu Hause“, öffnet das Garagentor (sofern „Öffnen nur erlaubt, wenn“ erfüllt ist).",
+          "garage_open_mode": "„Öffnen, wenn erfüllt“: Das Tor öffnet, sobald die Bedingung erfüllt wird. „Öffnen nur erlaubt, wenn“: automatisches Öffnen (z. B. bei Heimkehr) nur, solange sie erfüllt ist.",
+          "garage_open_value": "Für größer/kleiner/gleich, z. B. 24 oder home.",
+          "garage_close_mode": "„Schließen, wenn erfüllt“: Das Tor schließt, sobald die Bedingung erfüllt wird. „Schließen nur erlaubt, wenn“: automatisches Schließen (Zeit, Dauer, alle weg) nur, solange sie erfüllt ist.",
+          "garage_close_value": "Für größer/kleiner/gleich, z. B. 24 oder home.",
+          "garage_light_entity": "Wird eingeschaltet, sobald das Tor öffnet – auch per Hand oder Fernbedienung.",
+          "garage_light_minutes": "So lange bleibt das Licht nach dem Öffnen an, dann geht es aus. 0 = bleibt an (bis zum Schließen, falls unten eingestellt).",
+          "garage_light_off_on_close": "Schaltet das Licht aus, wenn das Tor zu ist – nach der Nachlaufzeit.",
+          "garage_light_close_delay": "So lange bleibt das Licht nach dem Schließen noch an. 0 = sofort aus."
         }
       }
     },
@@ -202,22 +309,31 @@
           "data": {
             "name": "Name",
             "cover_entity": "Rollladen",
+            "device_type": "Gerät",
+            "garage_switch_entity": "Tor-Schalter (Impuls)",
             "up_mode": "Öffnen nach",
             "down_mode": "Schließen nach",
             "area": "Bereich (Gruppe)",
             "open_level": "Höhe offen",
             "close_level": "Höhe geschlossen",
+            "open_tilt": "Lamellenwinkel offen",
+            "close_tilt": "Lamellenwinkel geschlossen",
             "elevation": "Sonnenhöhe für Modus „Sonnenhöhe“"
           },
           "data_description": {
             "name": "Leer = Name der Rollladen-Entität.",
+            "device_type": "Markise: Wind- und Regenalarm fahren sie in die Geschlossen-Position (eingefahren).",
+            "garage_switch_entity": "Optional: Schalter, Taster oder Relais, der das Tor bewegt (z. B. Shelly mit Auto-Aus). Shutter Captain löst dann einen Impuls aus statt den Cover-Befehl; die Position kommt weiter vom Cover oben.",
             "area": "In welcher Bereichs-Gruppe der Rollladen steuerbar ist. Automatisch = aus „Öffnen/Schließen nach“.",
-            "open_level": "Home Assistant: 100 % = ganz offen."
+            "open_level": "Home Assistant: 100 % = ganz offen.",
+            "open_tilt": "−1 = nicht verstellen.",
+            "close_tilt": "−1 = nicht verstellen."
           }
         },
         "window": {
           "title": "Fenster & Tür",
           "data": {
+            "window_profile": "Tür-/Fensterverhalten",
             "window_entity": "Fenster-/Türkontakt",
             "tilt_entity": "Kipp-Kontakt (optional)",
             "window_action": "Fahren bei Fensteränderung",
@@ -227,9 +343,11 @@
             "vent_on_close": "Lüftungshöhe beim Schließen",
             "drive_after_close": "Nach Schließen des Fensters nachfahren",
             "window_open_delay": "Verzögerung bei Öffnen",
-            "window_close_delay": "Verzögerung bei Schließen"
+            "window_close_delay": "Verzögerung bei Schließen",
+            "vent_level": "Höhe für den Lüften-Knopf"
           },
           "data_description": {
+            "window_profile": "Terrassentür: beim Öffnen hoch, solange offen nie runter, nach dem Schließen zurück zur Automatik · Lüftungsfenster: beim Öffnen/Kippen auf Lüftungshöhe, abends erst zu und dann auf Lüftungshöhe · Nur Schutz: keine Reaktion, aber solange offen nie runter · Eigene: die Einzelfelder unten.",
             "tilt_entity": "Separater Sensor für „gekippt“. Sensoren mit Zustand „tilted“ werden auch erkannt.",
             "lockout": "Welche Richtung die Automatik fahren darf, solange Fenster/Tür offen ist.",
             "vent_on_close": "Bei offenem Fenster erst ganz schließen, dann auf die Fensterhöhe fahren."
@@ -253,7 +371,12 @@
             "light_setpoint": "Licht ab",
             "light_hyst": "Hysterese Licht",
             "keep_sun": "Im Sonnenschutz halten bis abends",
+            "sun_start_delay": "Sonnenschutz erst nach",
             "sun_end_delay": "Verzögerung Sonnenschutz-Ende",
+            "sun_month_from": "Sonnenschutz ab Monat",
+            "sun_month_to": "bis Monat",
+            "forecast_temp": "Nur wenn heute erwartet ab",
+            "weather_conditions": "Nur bei Wetterlage",
             "heat_protection": "Hitzeschutz (ganz schließen)",
             "heat_temp": "Hitzeschutz ab"
           },
@@ -261,12 +384,59 @@
             "sun_mode": "Alle gewählten Auslöser müssen aktiv sein. Ein Lichtsensor wird zusätzlich UND-verknüpft.",
             "sun_tilt": "Für Jalousien mit Lamellen. −1 = nicht verstellen.",
             "azimuth": "0° = Nord, 90° = Ost, 180° = Süd, 270° = West.",
-            "light_hyst": "Beispiel: 30.000 lx und 40 % → aktiv bis unter 18.000 lx."
+            "light_hyst": "Beispiel: 30.000 lx und 40 % → aktiv bis unter 18.000 lx.",
+            "sun_start_delay": "So lange muss die Sonne anhaltend scheinen – gegen Hoch und Runter bei Wolken.",
+            "sun_month_from": "1–12. Über den Jahreswechsel möglich, z. B. 4 bis 9. Im Winter bleibt die Sonne so drin.",
+            "forecast_temp": "Höchsttemperatur der Wettervorhersage (Wetter-Entität unter Einstellungen → Darstellung). 0 = egal.",
+            "weather_conditions": "Leer = egal. Sonst muss das aktuelle Wetter eine der gewählten Lagen sein."
+          }
+        },
+        "conditions": {
+          "title": "Eigene Bedingungen",
+          "data": {
+            "cond_mode": "Eigene Bedingung wirkt auf",
+            "cond_logic": "Verknüpfung",
+            "cond1_entity": "Bedingung 1: Entität",
+            "cond1_op": "Bedingung 1: ist",
+            "cond1_value": "Bedingung 1: Wert",
+            "cond2_entity": "Bedingung 2: Entität",
+            "cond2_op": "Bedingung 2: ist",
+            "cond2_value": "Bedingung 2: Wert",
+            "cond_level": "Höhe bei „nur halb schließen“"
+          },
+          "data_description": {
+            "cond_mode": "Sonnenschutz nur wenn erfüllt · abends nur bis zur Höhe unten · nicht schließen · nicht öffnen.",
+            "cond1_value": "Für größer/kleiner/gleich, z. B. 24 oder home."
+          }
+        },
+        "stages": {
+          "title": "Schließstufen",
+          "data": {
+            "close1_entity": "Stufe 1: auch schließen wenn an",
+            "close1_from": "Stufe 1 per Entität frühestens ab",
+            "close2_enabled": "Zweite Schließstufe (Nacht)",
+            "close2_level": "Stufe 2: Höhe",
+            "close2_tilt": "Stufe 2: Lamellenwinkel",
+            "close2_lux": "Stufe 2 bei Helligkeit unter",
+            "close2_lux_entity": "Stufe 2: Helligkeitssensor",
+            "close2_lux_minutes": "Stufe 2: so lange darunter",
+            "close2_entity": "Stufe 2 auch wenn an",
+            "close2_from": "Stufe 2 frühestens ab"
+          },
+          "data_description": {
+            "close1_entity": "Z. B. Licht an. Schließt zusätzlich zur Zeit-/Helligkeitsautomatik.",
+            "close2_enabled": "Fährt nach Stufe 1 auf eine zweite Höhe/Lamellenstellung – nur bei Automatik an, ohne Sperre und mit geschlossenem Fenster.",
+            "close2_tilt": "−1 = nicht verstellen.",
+            "close2_lux": "0 = nicht über Helligkeit.",
+            "close2_lux_entity": "Leer = globaler Helligkeitssensor.",
+            "close2_from": "00:00 = keine Uhrzeit."
           }
         },
         "extra": {
           "title": "Extras & Alarme",
           "data": {
+            "lamp_entity": "Licht beim Schließen",
+            "lamp_brightness": "Helligkeit des Lichts",
             "late_close": "Spät schließen",
             "summer_no_close": "Im Sommer nicht schließen",
             "xmas": "Weihnachtshöhe verwenden",
@@ -279,7 +449,9 @@
             "alarm_wind2": "Alarm Wind Stufe 2",
             "alarm_frost": "Alarm Frost"
           },
-          "data_description": {}
+          "data_description": {
+            "lamp_entity": "Wird beim automatischen Schließen eingeschaltet und beim Öffnen wieder aus."
+          }
         }
       },
       "error": {
@@ -372,6 +544,20 @@
         "never": "Nur manuell (Fortsetzen)"
       }
     },
+    "awning_manual_round": {
+      "options": {
+        "0": "Nicht runden",
+        "5": "5 %",
+        "10": "10 %"
+      }
+    },
+    "awning_manual_reset": {
+      "options": {
+        "next_event": "Beim nächsten Zeitereignis",
+        "timeout": "Nach Ablauf der Dauer",
+        "never": "Nur manuell (Fortsetzen)"
+      }
+    },
     "area": {
       "options": {
         "auto": "Automatisch",
@@ -379,6 +565,120 @@
         "sleep": "Schlafbereich",
         "children": "Kinderbereich",
         "none": "Keiner"
+      }
+    },
+    "accent": {
+      "options": {
+        "ha": "Home Assistant",
+        "amber": "Bernstein",
+        "indigo": "Indigo",
+        "teal": "Petrol",
+        "ocean": "Ozean",
+        "forest": "Wald",
+        "rose": "Rose"
+      }
+    },
+    "device_type": {
+      "options": {
+        "shutter": "Rollladen / Jalousie",
+        "awning": "Markise",
+        "garage": "Garagentor / Tor"
+      }
+    },
+    "window_profile": {
+      "options": {
+        "terrace_door": "Terrassentür",
+        "vent_window": "Lüftungsfenster",
+        "protect_only": "Nur Schutz",
+        "custom": "Eigene Einstellung"
+      }
+    },
+    "cond_mode": {
+      "options": {
+        "off": "Aus",
+        "sun": "Sonnenschutz nur wenn erfüllt",
+        "half_close": "Abends nur teilweise schließen",
+        "no_close": "Nicht automatisch schließen",
+        "no_open": "Nicht automatisch öffnen"
+      }
+    },
+    "cond_logic": {
+      "options": {
+        "and": "Alle erfüllt (UND)",
+        "or": "Eine erfüllt (ODER)"
+      }
+    },
+    "cond1_op": {
+      "options": {
+        "on": "an / offen / zu Hause",
+        "off": "aus / zu / abwesend",
+        "gt": "größer als",
+        "lt": "kleiner als",
+        "eq": "gleich",
+        "ne": "ungleich"
+      }
+    },
+    "cond2_op": {
+      "options": {
+        "on": "an / offen / zu Hause",
+        "off": "aus / zu / abwesend",
+        "gt": "größer als",
+        "lt": "kleiner als",
+        "eq": "gleich",
+        "ne": "ungleich"
+      }
+    },
+    "garage_open_op": {
+      "options": {
+        "on": "an / offen / zu Hause",
+        "off": "aus / zu / abwesend",
+        "gt": "größer als",
+        "lt": "kleiner als",
+        "eq": "gleich",
+        "ne": "ungleich"
+      }
+    },
+    "garage_close_op": {
+      "options": {
+        "on": "an / offen / zu Hause",
+        "off": "aus / zu / abwesend",
+        "gt": "größer als",
+        "lt": "kleiner als",
+        "eq": "gleich",
+        "ne": "ungleich"
+      }
+    },
+    "garage_open_mode": {
+      "options": {
+        "off": "Aus",
+        "trigger": "Öffnen, wenn erfüllt",
+        "allow": "Öffnen nur erlaubt, wenn"
+      }
+    },
+    "garage_close_mode": {
+      "options": {
+        "off": "Aus",
+        "trigger": "Schließen, wenn erfüllt",
+        "allow": "Schließen nur erlaubt, wenn"
+      }
+    },
+    "weather_conditions": {
+      "options": {
+        "sunny": "Sonnig",
+        "clear-night": "Klare Nacht",
+        "partlycloudy": "Teilweise bewölkt",
+        "cloudy": "Bewölkt",
+        "fog": "Nebel",
+        "rainy": "Regen",
+        "pouring": "Starkregen",
+        "lightning": "Gewitter",
+        "lightning-rainy": "Gewitter mit Regen",
+        "snowy": "Schnee",
+        "snowy-rainy": "Schneeregen",
+        "hail": "Hagel",
+        "windy": "Windig",
+        "windy-variant": "Windig, bewölkt",
+        "exceptional": "Unwetter"
       }
     }
   },
@@ -420,6 +720,7 @@
           "paused": "Pausiert",
           "window_open": "Fenster offen",
           "window_locked": "Aussperrschutz",
+          "emergency": "Notfall",
           "fire": "Feueralarm",
           "rain": "Regenalarm",
           "wind1": "Windalarm 1",
@@ -453,6 +754,9 @@
       }
     },
     "switch": {
+      "master": {
+        "name": "Automatik (gesamt)"
+      },
       "vacation": {
         "name": "Urlaub"
       },
@@ -468,6 +772,9 @@
       "auto_children": {
         "name": "Automatik Kinderbereich"
       },
+      "automation": {
+        "name": "Automatik"
+      },
       "auto_up": {
         "name": "Automatisch öffnen"
       },
@@ -481,6 +788,9 @@
     "button": {
       "resume": {
         "name": "Automatik fortsetzen"
+      },
+      "vent": {
+        "name": "Lüften"
       },
       "auto_all": {
         "name": "Alle: Automatik fortsetzen"
@@ -535,11 +845,15 @@
       "fields": {
         "action": {
           "name": "Aktion",
-          "description": "open, close, sun_protect oder auto"
+          "description": "open, close, sun_protect, auto oder manual"
         },
         "area": {
           "name": "Bereich",
-          "description": "all, living, sleep oder children"
+          "description": "all, living, sleep oder children (nur Rollläden)"
+        },
+        "device_type": {
+          "name": "Gerätetyp",
+          "description": "shutter, awning oder garage – Markisen und Garagentore: immer alle des Typs"
         }
       }
     },
@@ -554,6 +868,16 @@
         "minutes": {
           "name": "Minuten",
           "description": "Leer = bis Fortsetzen"
+        }
+      }
+    },
+    "vent": {
+      "name": "Lüften",
+      "description": "Fährt die Rollläden auf ihre Lüftungshöhe und hält sie dort bis zum nächsten Zeitereignis.",
+      "fields": {
+        "entity_id": {
+          "name": "Rollläden",
+          "description": "Cover-Entitäten"
         }
       }
     },

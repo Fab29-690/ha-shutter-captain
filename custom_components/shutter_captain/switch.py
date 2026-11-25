@@ -14,6 +14,7 @@ from .const import HUB_FLAGS
 from .entity import HubEntity, ShutterEntity
 
 FLAG_ICONS = {
+    "master": "mdi:power",
     "vacation": "mdi:beach",
     "school_holiday": "mdi:school-outline",
     "auto_living": "mdi:sofa-outline",
@@ -37,7 +38,8 @@ async def async_setup_entry(
     async_add_entities(HubFlagSwitch(hub, flag) for flag in HUB_FLAGS)
     for subentry_id, ctrl in hub.shutters.items():
         async_add_entities(
-            [ShutterAutoSwitch(ctrl, kind) for kind in ("up", "down", "sun")],
+            [ShutterAutomationSwitch(ctrl)]
+            + ([] if ctrl.device_type == "garage" else [ShutterAutoSwitch(ctrl, kind) for kind in ("up", "down", "sun")]),
             config_subentry_id=subentry_id,
         )
 
@@ -86,3 +88,25 @@ class ShutterAutoSwitch(ShutterEntity, SwitchEntity):
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Disable."""
         self.ctrl.set_auto(self.kind, False)
+
+
+class ShutterAutomationSwitch(ShutterEntity, SwitchEntity):
+    """Automatic / manual: off = the automation leaves this shutter alone until switched on again."""
+
+    _attr_icon = "mdi:robot-outline"
+
+    def __init__(self, ctrl) -> None:
+        super().__init__(ctrl, "automation")
+
+    @property
+    def is_on(self) -> bool:
+        """On while the shutter runs automatically."""
+        return not self.ctrl.manual
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Back to automatic (moves to the automation position – the lockout still applies)."""
+        await self.ctrl.async_resume()
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Manual: hold until switched on again."""
+        await self.ctrl.async_pause(None)

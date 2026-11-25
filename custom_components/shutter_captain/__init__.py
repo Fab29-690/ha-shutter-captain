@@ -7,7 +7,7 @@ from pathlib import Path
 
 import voluptuous as vol
 
-from homeassistant.components import panel_custom
+from homeassistant.components import frontend, panel_custom
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_ENTITY_ID, Platform
@@ -30,11 +30,13 @@ type ShutterCaptainConfigEntry = ConfigEntry[ShutterHub]
 SERVICE_COMMAND = "command"
 SERVICE_PAUSE = "pause"
 SERVICE_RESUME = "resume"
+SERVICE_VENT = "vent"
 
 COMMAND_SCHEMA = vol.Schema(
     {
-        vol.Required("action"): vol.In(["open", "close", "sun_protect", "auto"]),
+        vol.Required("action"): vol.In(["open", "close", "sun_protect", "auto", "manual"]),
         vol.Optional("area", default="all"): vol.In(["all", *AREAS]),
+        vol.Optional("device_type", default="shutter"): vol.In(["shutter", "awning", "garage"]),
     }
 )
 PAUSE_SCHEMA = vol.Schema(
@@ -53,6 +55,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     await hass.http.async_register_static_paths(
         [StaticPathConfig(STATIC_URL, str(Path(__file__).parent / "frontend"), False)]
     )
+    # The dashboard card is loaded on every dashboard automatically – no resource needed.
+    card_file = Path(__file__).parent / "frontend" / "shutter-captain-card.js"
+    stamp = await hass.async_add_executor_job(lambda: int(card_file.stat().st_mtime))
+    frontend.add_extra_js_url(hass, f"{STATIC_URL}/shutter-captain-card.js?v={VERSION}-{stamp}")
     return True
 
 
@@ -77,8 +83,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ShutterCaptainConfigEnt
 
 async def async_remove_entry(hass: HomeAssistant, entry: ShutterCaptainConfigEntry) -> None:
     """Remove the sidebar panel with the last entry."""
-    from homeassistant.components import frontend  # noqa: PLC0415
-
     if not hass.config_entries.async_loaded_entries(DOMAIN):
         frontend.async_remove_panel(hass, PANEL_URL, warn_if_unknown=False)
 
@@ -128,7 +132,7 @@ def _controllers_for(hass: HomeAssistant, entity_ids: list[str]):
 def _register_services(hass: HomeAssistant) -> None:
     async def command(call: ServiceCall) -> None:
         for hub in _hubs(hass):
-            await hub.async_command(call.data["action"], call.data["area"])
+            await hub.async_command(call.data["action"], call.data["area"], call.data["device_type"])
 
     async def pause(call: ServiceCall) -> None:
         for ctrl in _controllers_for(hass, call.data[ATTR_ENTITY_ID]):
@@ -141,3 +145,9 @@ def _register_services(hass: HomeAssistant) -> None:
     hass.services.async_register(DOMAIN, SERVICE_COMMAND, command, COMMAND_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_PAUSE, pause, PAUSE_SCHEMA)
     hass.services.async_register(DOMAIN, SERVICE_RESUME, resume, RESUME_SCHEMA)
+
+    async def vent(call: ServiceCall) -> None:
+        for ctrl in _controllers_for(hass, call.data[ATTR_ENTITY_ID]):
+            await ctrl.async_vent()
+
+    hass.services.async_register(DOMAIN, SERVICE_VENT, vent, RESUME_SCHEMA)

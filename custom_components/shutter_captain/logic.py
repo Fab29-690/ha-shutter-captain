@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
+import hashlib
 from typing import Any
 
 # --- parsing ---------------------------------------------------------------
@@ -233,6 +234,77 @@ def move_allowed(lockout: str, current: float, target: float, window_open: bool)
     if lockout == "close":
         return not going_up
     return False
+
+
+def restore_after_window_close(window_action: str, drive_after_close: bool, lockout: str) -> bool:
+    """Move back to the automation position after the window/door closed?
+
+    * window action "close" / "open_close": yes (e.g. darkening after closing the door).
+    * "catch up after window closes": yes, unless the lockout blocks everything
+      (then nothing was postponed that could be caught up).
+    * otherwise (e.g. action "open" only): no – the shutter stays where it is.
+    """
+    if window_action in ("close", "open_close"):
+        return True
+    return bool(drive_after_close) and lockout != "off"
+
+
+# --- conditions / months ----------------------------------------------------
+
+ON_WORDS = {"on", "open", "true", "home", "1", "yes", "detected", "an", "ein"}
+
+
+def _as_float(value: Any) -> float | None:
+    try:
+        return float(str(value).replace(",", "."))
+    except (TypeError, ValueError):
+        return None
+
+
+def condition_met(state: Any, op: str, value: Any = None) -> bool:
+    """One user condition on an entity state.
+
+    on/off: generic truthiness (on, open, home, true …); gt/lt: numeric; eq/ne: text or number.
+    An unavailable/missing entity never satisfies a condition.
+    """
+    if state is None or str(state).lower() in ("unavailable", "unknown", ""):
+        return False
+    text = str(state).lower()
+    if op == "on":
+        return text in ON_WORDS
+    if op == "off":
+        return text not in ON_WORDS
+    number, target = _as_float(state), _as_float(value)
+    if op in ("gt", "lt"):
+        if number is None or target is None:
+            return False
+        return number > target if op == "gt" else number < target
+    same = (number == target) if number is not None and target is not None else text == str(value or "").strip().lower()
+    return same if op == "eq" else not same
+
+
+def conditions_met(results: list[bool], logic_op: str = "and") -> bool:
+    """Combine configured conditions; no conditions configured means 'not met'."""
+    if not results:
+        return False
+    return any(results) if logic_op == "or" else all(results)
+
+
+def month_in_range(month: int, start: int, end: int) -> bool:
+    """Month window, may wrap around the new year (e.g. 10..3)."""
+    start, end = int(start), int(end)
+    if start <= end:
+        return start <= month <= end
+    return month >= start or month <= end
+
+
+def random_offset_minutes(seed: str, max_minutes: int) -> float:
+    """Stable per day and shutter pseudo-random offset in [-max, +max] minutes."""
+    if max_minutes <= 0:
+        return 0.0
+    digest = hashlib.sha256(seed.encode()).digest()
+    fraction = int.from_bytes(digest[:4], "big") / 0xFFFFFFFF
+    return (fraction * 2 - 1) * max_minutes
 
 
 # --- alarms -----------------------------------------------------------------

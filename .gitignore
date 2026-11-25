@@ -5,3 +5,8 @@ __pycache__/
 .venv/
 *.zip
 .DS_Store
+
+# local notes and backups, not for the public repo
+HANDOFF.md
+shutter_pilot_config_backup.json
+Claude outputs/

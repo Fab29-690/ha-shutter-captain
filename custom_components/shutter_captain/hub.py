@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Callable
 from datetime import date, datetime, timedelta
 import logging
+import time
 from typing import TYPE_CHECKING, Any
 
 from astral import Observer, SunDirection, sun as astral_sun
@@ -12,6 +14,7 @@ from astral import Observer, SunDirection, sun as astral_sun
 from homeassistant.core import Event, EventStateChangedData, HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.event import (
+    async_call_later,
     async_track_point_in_time,
     async_track_state_change_event,
     async_track_time_change,
@@ -61,6 +64,12 @@ class ShutterHub:
         self._day_unsubs: list[Callable[[], None]] = []
         self._brightness_since: dict[str, datetime | None] = {"low": None, "high": None}
         self.started = False
+        # One queue for every cover command: keeps a minimum gap between radio commands.
+        self._cmd_lock = asyncio.Lock()
+        self._last_cmd = 0.0
+        self.forecast: dict[str, Any] = {"max": None, "condition": None}
+        self.emergency_active = False
+        self.awning_retracted_on: date | None = None
 
     # ------------------------------------------------------------------ setup
 
@@ -98,6 +107,60 @@ class ShutterHub:
         for ctrl in self.shutters.values():
             ctrl.async_start()
         self._schedule_day()
+        awning_entities = [
+            e for e in (
+                self.options.get("awning_wind_entity"),
+                self.options.get("awning_rain_entity"),
+                self.options.get("awning_temp_entity"),
+            ) if e
+        ]
+        if awning_entities:
+            self._unsubs.append(
+                async_track_state_change_event(self.hass, awning_entities, self._on_awning_weather)
+            )
+        if (t := logic.parse_time(self.options.get("awning_retract_time"))) and (t.hour or t.minute):
+            self._unsubs.append(
+                async_track_time_change(self.hass, self._on_awning_retract_time, hour=t.hour, minute=t.minute, second=0)
+            )
+        if (t := logic.parse_time(self.options.get("garage_close_time"))) and (t.hour or t.minute):
+            self._unsubs.append(
+                async_track_time_change(self.hass, self._on_garage_close_time, hour=t.hour, minute=t.minute, second=0)
+            )
+        if presence := self.options.get("garage_presence_entity"):
+            self._unsubs.append(
+                async_track_state_change_event(self.hass, [presence], self._on_garage_presence)
+            )
+        if arrivals := list(self.options.get("garage_arrival_entities") or []):
+            self._unsubs.append(
+                async_track_state_change_event(self.hass, arrivals, self._on_garage_arrival)
+            )
+        garage_conditions = {
+            e for which in ("open", "close")
+            if self.options.get(f"garage_{which}_mode", "off") == "trigger"
+            and (e := self.options.get(f"garage_{which}_entity"))
+        }
+        if garage_conditions:
+            self._unsubs.append(
+                async_track_state_change_event(self.hass, list(garage_conditions), self._on_garage_condition)
+            )
+        if awning_emergency := list(self.options.get("awning_emergency_entities") or []):
+            self._unsubs.append(
+                async_track_state_change_event(self.hass, awning_emergency, self._on_awning_emergency)
+            )
+        if garage_emergency := list(self.options.get("garage_emergency_entities") or []):
+            self._unsubs.append(
+                async_track_state_change_event(self.hass, garage_emergency, self._on_garage_emergency)
+            )
+        if emergency := self.options.get("emergency_entity"):
+            self._unsubs.append(
+                async_track_state_change_event(self.hass, [emergency], self._on_emergency_change)
+            )
+            if self._entity_on("emergency_entity"):
+                self._set_emergency(True)
+        if self.garage_emergency_wanted():
+            self._on_garage_emergency()
+        if self.awning_emergency_wanted():
+            self._on_awning_emergency()
 
         self._unsubs.append(
             async_track_time_change(self.hass, self._on_midnight, hour=0, minute=0, second=10)
@@ -105,6 +168,13 @@ class ShutterHub:
         self._unsubs.append(
             async_track_time_interval(self.hass, self._on_tick, timedelta(minutes=1))
         )
+        if self.options.get("forecast_entity") or self.options.get("weather_entity"):
+            self._unsubs.append(
+                async_track_time_interval(self.hass, self._refresh_forecast, timedelta(minutes=30))
+            )
+            self.hass.async_create_task(self._refresh_forecast())
+            # The weather integration may not be ready right after a restart – try again shortly.
+            self._unsubs.append(async_call_later(self.hass, 90, self._refresh_forecast))
         alarm_entities = [e for a in ALARMS if (e := self.options.get(f"alarm_{a}_entity"))]
         if alarm_entities:
             self._unsubs.append(
@@ -123,6 +193,11 @@ class ShutterHub:
         if watched:
             self._unsubs.append(
                 async_track_state_change_event(self.hass, watched, self._on_calendar_change)
+            )
+        if weather := self.options.get("weather_entity"):
+            # Panel and card show rain/snow/clouds in the window – refresh on weather changes.
+            self._unsubs.append(
+                async_track_state_change_event(self.hass, [weather], self._on_weather_change)
             )
         self.async_update()
 
@@ -286,6 +361,8 @@ class ShutterHub:
         # Assign stagger index per (direction, mode) group in configured order.
         groups: dict[tuple[str, str], int] = {}
         for ctrl in self.shutters.values():
+            if ctrl.device_type == "garage":
+                continue
             plan = ctrl.plan_day(today, events)
             for direction, moment in (("up", plan.open), ("down", plan.close)):
                 if moment is None:
@@ -295,6 +372,7 @@ class ShutterHub:
                 groups[(direction, mode)] = index + 1
                 delay = index * self._stagger_for(mode)
                 fire_at = moment + timedelta(seconds=delay)
+                fire_at += timedelta(minutes=self._random_minutes(ctrl, direction, today))
                 if fire_at <= dt_util.now():
                     continue
                 self._day_unsubs.append(
@@ -352,7 +430,15 @@ class ShutterHub:
         """Every minute: sun protection and brightness control."""
         self._check_brightness(now)
         for ctrl in self.shutters.values():
+            if ctrl.device_type == "garage":
+                await ctrl.async_check_garage()
+                continue
             await ctrl.async_evaluate_sun()
+            await ctrl.async_check_stages()
+
+    @callback
+    def _on_weather_change(self, _event: Event[EventStateChangedData]) -> None:
+        self.async_update()
 
     @callback
     def _on_calendar_change(self, _event: Event[EventStateChangedData]) -> None:
@@ -373,7 +459,12 @@ class ShutterHub:
             return
         delay = timedelta(minutes=self.options["brightness_delay"])
         _, elevation = self.sun_position()
-        morning = dt_util.now().hour < 12
+        now_t = dt_util.now().time()
+        open_from = logic.parse_time(self.options.get("brightness_open_from")) or logic.parse_time("04:00")
+        close_from = logic.parse_time(self.options.get("brightness_close_from")) or logic.parse_time("12:00")
+        # Opening only between "open from" and "close from", closing only after "close from":
+        # a passing storm cloud at noon does not close everything, a street lamp does not open at night.
+        morning = open_from <= now_t < close_from
 
         for kind, condition in (
             ("low", value <= self.options["brightness_close"]),
@@ -388,7 +479,7 @@ class ShutterHub:
                 continue
             # Darkness only closes in the evening, brightness only opens in the morning,
             # so a passing storm cloud at noon does not close everything.
-            if kind == "low" and not morning:
+            if kind == "low" and now_t >= close_from:
                 self._run_brightness("down")
             elif kind == "high" and morning and elevation > -6:
                 self._run_brightness("up")
@@ -402,6 +493,155 @@ class ShutterHub:
             self._later(index * self.options["stagger"], _bind_async(ctrl.async_scheduled, direction))
 
     # ---------------------------------------------------------------- alarms
+
+    # ------------------------------------------------------------- awnings
+
+    def awning_guard(self) -> str | None:
+        """Why awnings must stay retracted right now: wind, rain or frost (None = fine)."""
+        wind = self.options.get("awning_wind_entity")
+        if wind:
+            state = self.hass.states.get(wind)
+            value = state_number(state)
+            if (value is not None and state.domain == "sensor" and value >= float(self.options["awning_wind_speed"])) or (
+                state is not None and state.domain != "sensor" and state_is_on(state)
+            ):
+                return "wind"
+        rain = self.options.get("awning_rain_entity")
+        if rain:
+            state = self.hass.states.get(rain)
+            value = state_number(state)
+            if (state is not None and state.domain == "sensor" and value is not None and value > 0) or (
+                state is not None and state.domain != "sensor" and state_is_on(state)
+            ):
+                return "rain"
+        frost = float(self.options.get("awning_frost_temp", -50))
+        if frost > -50 and (temp := self.awning_temperature()) is not None and temp <= frost:
+            return "frost"
+        return None
+
+    def awning_temperature(self) -> float | None:
+        entity_id = self.options.get("awning_temp_entity")
+        return state_number(self.hass.states.get(entity_id)) if entity_id else None
+
+    @property
+    def awnings_retracted_today(self) -> bool:
+        """After the evening retract time awnings stay in until midnight."""
+        return self.awning_retracted_on == dt_util.now().date()
+
+    @callback
+    def _on_awning_weather(self, _event: Event[EventStateChangedData]) -> None:
+        for ctrl in self.shutters.values():
+            if ctrl.device_type == "awning":
+                self.hass.async_create_task(ctrl.async_evaluate_sun())
+
+    async def _on_awning_retract_time(self, _now: datetime) -> None:
+        self.awning_retracted_on = dt_util.now().date()
+        for ctrl in self.shutters.values():
+            if ctrl.device_type == "awning":
+                await ctrl.async_evaluate_sun()
+
+    # ------------------------------------------------------------- garage doors
+
+    async def _on_garage_close_time(self, _now: datetime) -> None:
+        for ctrl in self.shutters.values():
+            if ctrl.device_type == "garage":
+                await ctrl.async_garage_close("garage_close_time")
+
+    @callback
+    def _on_garage_presence(self, event: Event[EventStateChangedData]) -> None:
+        new = event.data["new_state"]
+        if new is None or new.state in ("unavailable", "unknown") or state_is_on(new) or new.state == "home":
+            return
+        # Everybody left: close the garage doors.
+        for ctrl in self.garages():
+            self.hass.async_create_task(ctrl.async_garage_close("garage_presence"))
+
+    def garages(self) -> list[ShutterController]:
+        """All garage door controllers."""
+        return [c for c in self.shutters.values() if c.device_type == "garage"]
+
+    @callback
+    def _on_garage_arrival(self, event: Event[EventStateChangedData]) -> None:
+        """A person comes home: open the garage doors."""
+        old, new = event.data["old_state"], event.data["new_state"]
+        if new is None or new.state != "home":
+            return
+        # Only a real arrival – not a restart or an entity becoming available again.
+        if old is None or old.state in ("home", "unavailable", "unknown"):
+            return
+        for ctrl in self.garages():
+            self.hass.async_create_task(ctrl.async_garage_open("garage_arrival"))
+
+    @callback
+    def _on_garage_condition(self, event: Event[EventStateChangedData]) -> None:
+        """Open/close condition became true."""
+        entity_id = event.data["entity_id"]
+        old, new = event.data["old_state"], event.data["new_state"]
+        if old is None or new is None:
+            return
+        for which in ("open", "close"):
+            if self.options.get(f"garage_{which}_mode") != "trigger" or self.options.get(f"garage_{which}_entity") != entity_id:
+                continue
+            for ctrl in self.garages():
+                if ctrl.garage_condition(which, new) and not ctrl.garage_condition(which, old):
+                    if which == "open":
+                        self.hass.async_create_task(ctrl.async_garage_open("garage_condition_open"))
+                    else:
+                        self.hass.async_create_task(ctrl.async_garage_close("garage_condition_close"))
+
+    def garage_emergency_wanted(self) -> bool:
+        """Emergency opener: any configured entity on, or (optionally) fire alarm / emergency input."""
+        for entity_id in self.options.get("garage_emergency_entities") or []:
+            if state_is_on(self.hass.states.get(entity_id)):
+                return True
+        return bool(self.options.get("garage_emergency_alarms")) and (
+            self.emergency_active or bool(self.alarms_active.get("fire"))
+        )
+
+    @callback
+    def _on_garage_emergency(self, _event: Event[EventStateChangedData] | None = None) -> None:
+        wanted = self.garage_emergency_wanted()
+        for ctrl in self.garages():
+            if ctrl.garage_emergency != wanted:
+                self.hass.async_create_task(ctrl.async_garage_emergency(wanted))
+        self.async_update()
+
+    # ------------------------------------------------------------- emergency
+
+    @callback
+    def _on_emergency_change(self, _event: Event[EventStateChangedData]) -> None:
+        self._set_emergency(self._entity_on("emergency_entity"))
+
+    @callback
+    def _set_emergency(self, active: bool) -> None:
+        """Emergency input (e.g. smoke detector): overrides everything for every shutter."""
+        if active == self.emergency_active:
+            return
+        self.emergency_active = active
+        _LOGGER.warning("Emergency input %s", "ACTIVE – all shutters to emergency position" if active else "cleared")
+        for ctrl in self.shutters.values():
+            # Awnings and garage doors have their own emergency settings (see below).
+            if ctrl.device_type == "shutter":
+                self.hass.async_create_task(ctrl.async_emergency(active))
+        self._on_awning_emergency()
+        self._on_garage_emergency()
+
+    def awning_emergency_wanted(self) -> bool:
+        """Awnings retract: own entities, or (optionally) the shutter emergency input / fire alarm."""
+        for entity_id in self.options.get("awning_emergency_entities") or []:
+            if state_is_on(self.hass.states.get(entity_id)):
+                return True
+        return bool(self.options.get("awning_emergency_alarms", True)) and (
+            self.emergency_active or bool(self.alarms_active.get("fire"))
+        )
+
+    @callback
+    def _on_awning_emergency(self, _event: Event[EventStateChangedData] | None = None) -> None:
+        wanted = self.awning_emergency_wanted()
+        for ctrl in self.shutters.values():
+            if ctrl.device_type == "awning" and ctrl.emergency != wanted:
+                self.hass.async_create_task(ctrl.async_emergency(wanted))
+        self.async_update()
 
     def _alarm_state(self, alarm: str) -> bool:
         return self._entity_on(f"alarm_{alarm}_entity")
@@ -423,7 +663,8 @@ class ShutterHub:
             _LOGGER.info("Alarm %s %s", alarm, "active" if new else "cleared")
             for ctrl in self.shutters.values():
                 self.hass.async_create_task(ctrl.async_alarm_changed(alarm, new))
-        self.async_update()
+        self._on_awning_emergency()
+        self._on_garage_emergency()
 
     def alarm_level(self, alarm: str) -> int:
         """Configured target level for an alarm."""
@@ -433,12 +674,30 @@ class ShutterHub:
 
     def members(self, area: str) -> list[ShutterController]:
         """Shutters of an area ('all' for every shutter)."""
+        shutters = [c for c in self.shutters.values() if c.device_type == "shutter"]
         if area == "all":
-            return list(self.shutters.values())
-        return [c for c in self.shutters.values() if c.belongs_to(area)]
+            return shutters
+        return [c for c in shutters if c.belongs_to(area)]
 
-    async def async_command(self, action: str, area: str = "all") -> None:
-        """open | close | sun_protect | auto for an area."""
+    async def async_command(self, action: str, area: str = "all", device_type: str = "shutter") -> None:
+        """open | close | sun_protect | auto | manual for an area (shutters) or all awnings / garage doors."""
+        if device_type != "shutter":
+            # Awnings and garage doors have no areas and no group devices: all of the type.
+            devices = [c for c in self.shutters.values() if c.device_type == device_type]
+            for index, ctrl in enumerate(devices):
+                if action == "manual":
+                    await ctrl.async_pause(None)
+                elif action == "auto":
+                    await ctrl.async_resume()
+                elif action in ("open", "close"):
+                    self._later(index * float(self.options.get("command_gap", 0) or 0), _bind_async(ctrl.async_command, action))
+            self.async_update()
+            return
+        if action == "manual":
+            for ctrl in self.members(area):
+                await ctrl.async_pause(None)
+            self.async_update()
+            return
         targets = [c for c in self.members(area) if not c.manual_only or action == "auto"]
         stagger = self._stagger_for(area) if area in AREAS else self.options["stagger"]
         for index, ctrl in enumerate(targets):
@@ -489,7 +748,89 @@ class ShutterHub:
                 for area in AREAS
             },
             "shutter_count": len(self.shutters),
+            "accent": self.options.get("accent", "amber"),
+            "weather": self._weather_state(),
+            "forecast": self.forecast,
+            "master": self.active,
+            "emergency": self.emergency_active,
+            "awning_guard": self.awning_guard(),
         }
+
+    # ------------------------------------------------------- master switch
+
+    @property
+    def active(self) -> bool:
+        """Main switch: automation as a whole on/off (alarms keep working)."""
+        return self.flags.get("master", True)
+
+    # ------------------------------------------------------- presence simulation
+
+    def _random_minutes(self, ctrl: ShutterController, direction: str, day: date) -> float:
+        """Daily random shift of scheduled moves (only on vacation if configured)."""
+        max_minutes = int(self.options.get("random_offset", 0))
+        if not max_minutes:
+            return 0.0
+        if self.options.get("random_only_vacation", True) and not self.vacation:
+            return 0.0
+        return logic.random_offset_minutes(f"{day.isoformat()}|{ctrl.cover_entity}|{direction}", max_minutes)
+
+    # ------------------------------------------------------- command queue
+
+    async def async_cover_call(self, service: str, data: dict[str, Any], *, checked: bool = False) -> None:
+        """Send one cover command, keeping the configured gap to the previous one.
+
+        Commands that did not come from a shutter controller (group covers) are checked
+        against the lockout protection of every managed shutter here.
+        """
+        if not checked:
+            ctrl = next((c for c in self.shutters.values() if c.cover_entity == data.get("entity_id")), None)
+            target = {"close_cover": 0, "set_cover_position": data.get("position")}.get(service)
+            if ctrl is not None and target is not None and ctrl.lockout_blocks(int(target)):
+                _LOGGER.info("%s: lockout – group command %s skipped", ctrl.name, service)
+                ctrl.pending = True
+                ctrl.state = "window_locked"
+                ctrl.reason = "window_lockout"
+                self.async_update()
+                return
+        async with self._cmd_lock:
+            gap = float(self.options.get("command_gap", 0) or 0)
+            wait = self._last_cmd + gap - time.monotonic()
+            if wait > 0:
+                await asyncio.sleep(wait)
+            await self.hass.services.async_call("cover", service, data, blocking=False)
+            self._last_cmd = time.monotonic()
+
+    # ------------------------------------------------------- weather forecast
+
+    async def _refresh_forecast(self, _now: datetime | None = None) -> None:
+        """Today's maximum temperature and condition from the weather entity."""
+        # Not every weather integration offers forecasts – a separate entity can be chosen.
+        entity_id = self.options.get("forecast_entity") or self.options.get("weather_entity")
+        if not entity_id:
+            return
+        try:
+            resp = await self.hass.services.async_call(
+                "weather",
+                "get_forecasts",
+                {"entity_id": entity_id, "type": "daily"},
+                blocking=True,
+                return_response=True,
+            )
+            days = (resp or {}).get(entity_id, {}).get("forecast") or []
+        except Exception as err:  # noqa: BLE001 - weather providers fail in many ways
+            _LOGGER.debug("Forecast for %s not available: %s", entity_id, err)
+            return
+        today = days[0] if days else {}
+        self.forecast = {"max": today.get("temperature"), "condition": today.get("condition")}
+        self.async_update()
+
+    def _weather_state(self) -> str | None:
+        """Condition of the configured weather entity (rainy, snowy, cloudy …)."""
+        entity_id = self.options.get("weather_entity")
+        state = self.hass.states.get(entity_id) if entity_id else None
+        if state is None or state.state in ("unknown", "unavailable"):
+            return None
+        return state.state
 
 
 def _iso(moment: datetime | None) -> str | None:

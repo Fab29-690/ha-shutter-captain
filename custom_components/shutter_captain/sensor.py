@@ -42,7 +42,9 @@ class HubStatusSensor(HubEntity, SensorEntity):
     """Overview: day type, season, sun, alarms."""
 
     _attr_icon = "mdi:window-shutter-cog"
-    _unrecorded_attributes = frozenset({"sun_azimuth", "sun_elevation", "areas", "shutter_count"})
+    _unrecorded_attributes = frozenset(
+        {"sun_azimuth", "sun_elevation", "areas", "shutter_count", "weather", "accent"}
+    )
 
     def __init__(self, hub) -> None:
         super().__init__(hub, "hub_status")

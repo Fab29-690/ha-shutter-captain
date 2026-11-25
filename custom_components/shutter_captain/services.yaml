@@ -10,6 +10,7 @@ command:
             - close
             - sun_protect
             - auto
+            - manual
     area:
       required: false
       default: all
@@ -21,6 +22,16 @@ command:
             - living
             - sleep
             - children
+    device_type:
+      required: false
+      default: shutter
+      example: garage
+      selector:
+        select:
+          options:
+            - shutter
+            - awning
+            - garage
 
 pause:
   fields:
@@ -40,6 +51,15 @@ pause:
           unit_of_measurement: min
 
 resume:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          domain: cover
+          multiple: true
+
+vent:
   fields:
     entity_id:
       required: true

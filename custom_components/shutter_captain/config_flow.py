@@ -55,8 +55,21 @@ def _selector(field: Field) -> Any:
                 mode=selector.SelectSelectorMode.DROPDOWN,
             )
         )
+    if field.kind == "multiselect":
+        return selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=list(field.options),
+                translation_key=field.key,
+                multiple=True,
+                mode=selector.SelectSelectorMode.LIST,
+            )
+        )
+    if field.kind == "entities":
+        return selector.EntitySelector(selector.EntitySelectorConfig(domain=list(field.domains), multiple=True))
     if field.kind == "entity":
-        return selector.EntitySelector(selector.EntitySelectorConfig(domain=list(field.domains)))
+        if field.domains:
+            return selector.EntitySelector(selector.EntitySelectorConfig(domain=list(field.domains)))
+        return selector.EntitySelector(selector.EntitySelectorConfig())
     return selector.TextSelector()
 
 
@@ -81,10 +94,15 @@ def clean(fields: list[Field], user_input: dict[str, Any]) -> tuple[dict[str, An
     errors: dict[str, str] = {}
     for field in fields:
         value = user_input.get(field.key)
+        if field.kind == "entities":
+            data[field.key] = [v for v in (value or []) if isinstance(v, str) and v]
+            continue
         if value in (None, "") and field.optional:
             data[field.key] = None
             continue
-        if field.kind == "int" and value is not None:
+        if field.kind == "multiselect":
+            value = [v for v in (value or []) if v in field.options]
+        elif field.kind == "int" and value is not None:
             value = int(value)
         elif field.kind == "float" and value is not None:
             value = float(value)
@@ -186,6 +204,18 @@ class ShutterCaptainOptionsFlow(OptionsFlow):
         """General behaviour."""
         return await self._section("behaviour", user_input)
 
+    async def async_step_awnings(self, user_input=None) -> ConfigFlowResult:
+        """Awning settings."""
+        return await self._section("awnings", user_input)
+
+    async def async_step_garages(self, user_input=None) -> ConfigFlowResult:
+        """Garage door settings."""
+        return await self._section("garages", user_input)
+
+    async def async_step_appearance(self, user_input=None) -> ConfigFlowResult:
+        """Colours and weather for panel and card."""
+        return await self._section("appearance", user_input)
+
 
 # ----------------------------------------------------------------- shutter
 
@@ -250,7 +280,15 @@ class ShutterSubentryFlow(ConfigSubentryFlow):
 
     async def async_step_sun(self, user_input=None) -> SubentryFlowResult:
         """Sun protection."""
-        return await self._step("sun", "extra", user_input)
+        return await self._step("sun", "conditions", user_input)
+
+    async def async_step_conditions(self, user_input=None) -> SubentryFlowResult:
+        """Own conditions."""
+        return await self._step("conditions", "stages", user_input)
+
+    async def async_step_stages(self, user_input=None) -> SubentryFlowResult:
+        """Closing stages."""
+        return await self._step("stages", "extra", user_input)
 
     async def async_step_extra(self, user_input=None) -> SubentryFlowResult:
         """Extras and alarms."""

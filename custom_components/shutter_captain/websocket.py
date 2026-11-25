@@ -57,6 +57,9 @@ def _load_labels(language: str) -> dict[str, Any]:
 
 def coerce(field: Field, value: Any) -> Any:
     """Validate and convert one value coming from the panel."""
+    if field.kind == "entities":
+        values = value if isinstance(value, list) else [v.strip() for v in str(value or "").split(",")]
+        return [v for v in values if isinstance(v, str) and "." in v]
     if value in (None, "") and field.kind in ("entity", "text"):
         if field.optional:
             return None
@@ -70,6 +73,9 @@ def coerce(field: Field, value: Any) -> Any:
         if field.max is not None and number > field.max:
             raise vol.Invalid(f"{field.key} > {field.max}")
         return int(round(number)) if field.kind == "int" else number
+    if field.kind == "multiselect":
+        values = value if isinstance(value, list) else []
+        return [v for v in values if v in field.options]
     if field.kind == "select":
         if str(value) not in field.options:
             raise vol.Invalid(f"{field.key}: invalid option")

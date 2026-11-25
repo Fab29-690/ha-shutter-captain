@@ -34,6 +34,11 @@ const T = {
     tomorrow_work: "morgen Arbeitstag",
     vacation: "Urlaub",
     school_holiday: "Schulferien",
+    am_auto: "Automatik",
+    am_manual: "Manuell",
+    aw_extend: "Ausfahren", aw_retract: "Einfahren", none_of_type: "Noch keine eingerichtet.",
+    master: "Automatik",
+    vent: "Lüften",
     summer: "Sommer",
     xmas: "Weihnachtszeit",
     sun: "Sonne",
@@ -104,6 +109,11 @@ const T = {
     tomorrow_work: "tomorrow workday",
     vacation: "Vacation",
     school_holiday: "School holidays",
+    am_auto: "Automatic",
+    am_manual: "Manual",
+    aw_extend: "Extend", aw_retract: "Retract", none_of_type: "None set up yet.",
+    master: "Automation",
+    vent: "Vent",
     summer: "Summer",
     xmas: "Christmas",
     sun: "Sun",
@@ -158,6 +168,8 @@ const REASONS = {
     late_close: "Spät schließen",
     intermediate_close: "Zwischenposition → ganz geschlossen",
     command_open: "Befehl: öffnen",
+    garage_arrival: "Jemand kommt heim – geöffnet", garage_condition_open: "Bedingung erfüllt – geöffnet", garage_condition_close: "Bedingung erfüllt – geschlossen",
+    garage_emergency: "NOTFALL-ÖFFNER – Tor als Fluchtweg geöffnet", garage_emergency_cleared: "Notfall-Öffner beendet", garage_vent: "Lüften – Tor auf Lüftungshöhe",
     command_close: "Befehl: schließen",
     command_sun: "Befehl: Sonnenschutz",
     resumed: "Automatik fortgesetzt",
@@ -168,6 +180,19 @@ const REASONS = {
     window_open: "Fenster offen – Lüftungshöhe",
     window_tilted: "Fenster gekippt – Lüftungshöhe",
     window_closed: "Fenster zu – Automatik-Position",
+    window_closed_stay: "Fenster zu – bleibt stehen (kein Nachfahren eingestellt)",
+    master_off: "Automatik (gesamt) ist aus",
+    emergency: "Notfall – Notfallposition",
+    emergency_cleared: "Notfall beendet – zurück zur Automatik",
+    blocked_emergency: "Notfall aktiv – Automatik gesperrt",
+    stage2: "Zweite Schließstufe (Nacht)",
+    awning_wind: "Wind – Markise eingefahren", awning_rain: "Regen – Markise eingefahren", awning_frost: "Frost – Markise eingefahren",
+    awning_evening: "Abends eingefahren", awning_extend: "Sonne – Markise ausgefahren", awning_retract: "Keine Sonne – Markise eingefahren",
+    garage_auto_close: "Stand zu lange offen – geschlossen", garage_close_time: "Abends geschlossen", garage_presence: "Alle weg – geschlossen",
+    condition_no_open: "Eigene Bedingung: nicht geöffnet",
+    condition_no_close: "Eigene Bedingung: nicht geschlossen",
+    condition_half_close: "Eigene Bedingung: nur teilweise geschlossen",
+    vent_button: "Lüften – bleibt bis zum nächsten Zeitereignis",
     vent_position: "Geschlossen, wegen offenem Fenster auf Lüftungshöhe",
     sun_sun_protect: "Sonne scheint aufs Fenster",
     sun_heat_protect: "Hitzeschutz",
@@ -201,6 +226,8 @@ const REASONS = {
     late_close: "Late close",
     intermediate_close: "Intermediate → fully closed",
     command_open: "Command: open",
+    garage_arrival: "Someone came home – opened", garage_condition_open: "Condition met – opened", garage_condition_close: "Condition met – closed",
+    garage_emergency: "EMERGENCY OPENER – door opened as escape route", garage_emergency_cleared: "Emergency opener ended", garage_vent: "Venting – door at vent height",
     command_close: "Command: close",
     command_sun: "Command: sun protection",
     resumed: "Automation resumed",
@@ -211,6 +238,19 @@ const REASONS = {
     window_open: "Window open – vent position",
     window_tilted: "Window tilted – vent position",
     window_closed: "Window closed – automation position",
+    window_closed_stay: "Window closed – stays put (catch-up is off)",
+    master_off: "Automation (all) is off",
+    emergency: "Emergency – emergency position",
+    emergency_cleared: "Emergency over – back to automation",
+    blocked_emergency: "Emergency active – automation blocked",
+    stage2: "Second closing stage (night)",
+    awning_wind: "Wind – awning retracted", awning_rain: "Rain – awning retracted", awning_frost: "Frost – awning retracted",
+    awning_evening: "Retracted for the evening", awning_extend: "Sun – awning extended", awning_retract: "No sun – awning retracted",
+    garage_auto_close: "Open too long – closed", garage_close_time: "Closed in the evening", garage_presence: "Everyone left – closed",
+    condition_no_open: "Own condition: not opened",
+    condition_no_close: "Own condition: not closed",
+    condition_half_close: "Own condition: closed only partly",
+    vent_button: "Venting – held until the next scheduled event",
     vent_position: "Closed, back to vent position because window is open",
     sun_sun_protect: "Sun is shining on the window",
     sun_heat_protect: "Heat protection",
@@ -249,6 +289,7 @@ const STATE_STYLE = {
   paused: { color: "#78909c", icon: "mdi:pause-circle" },
   window_open: { color: "#00897b", icon: "mdi:window-open-variant" },
   window_locked: { color: "#00695c", icon: "mdi:lock" },
+  emergency: { color: "#b71c1c", icon: "mdi:alarm-light" },
   fire: { color: "#d32f2f", icon: "mdi:fire-alert" },
   rain: { color: "#1e88e5", icon: "mdi:weather-pouring" },
   wind1: { color: "#26a69a", icon: "mdi:weather-windy" },
@@ -260,7 +301,86 @@ const STATE_STYLE = {
 const esc = (v) =>
   String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
-const CSS = `
+
+/* ---- Window visuals shared by panel and card: sky by sun position, weather, motion, accents ---- */
+const ACCENT_COLORS = {
+  amber: "#f59e0b", indigo: "#5c6bc0", teal: "#0d9488", ocean: "#0284c7", forest: "#16a34a", rose: "#e11d48",
+};
+
+/** CSS classes for the window: time of day from the sun, plus rain/snow/clouds from the weather. */
+function skyClasses(elevation, azimuth, weather) {
+  let phase = "day";
+  if (typeof elevation === "number") {
+    if (elevation < -6) phase = "night";
+    else if (elevation < 5) phase = azimuth < 180 ? "dawn" : "dusk";
+  }
+  const w = String(weather || "");
+  let wx = "";
+  if (/rain|pouring|lightning/.test(w)) wx = "rain";
+  else if (/snow|hail/.test(w)) wx = "snow";
+  else if (/cloud|fog/.test(w)) wx = "cloud";
+  return { phase, wx };
+}
+
+function applySky(win, elevation, azimuth, weather) {
+  const { phase, wx } = skyClasses(elevation, azimuth, weather);
+  for (const p of ["day", "dawn", "dusk", "night"]) win.classList.toggle(`sky-${p}`, p === phase);
+  for (const w of ["rain", "snow", "cloud"]) win.classList.toggle(`wx-${w}`, w === wx);
+}
+
+/** opening / closing / null from the cover entity. */
+function motionOf(coverState) {
+  return coverState === "opening" || coverState === "closing" ? coverState : null;
+}
+
+const SKY_CSS = `
+.win { transition: background .8s; }
+.win.sky-day   { background: linear-gradient(180deg, #4fa8ec 0%, #a9dcff 62%, #e4f4d2 100%); }
+.win.sky-dawn  { background: linear-gradient(180deg, #5b6fc7 0%, #e9a1b4 52%, #ffd59a 100%); }
+.win.sky-dusk  { background: linear-gradient(180deg, #2f3483 0%, #b9629a 55%, #ffa566 100%); }
+.win.sky-night { background: linear-gradient(180deg, #0b1230 0%, #24305f 100%); }
+.win .stars { position: absolute; inset: 0; opacity: 0; transition: opacity .8s; pointer-events: none;
+  background-image:
+    radial-gradient(1.2px 1.2px at 18% 22%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 62% 14%, #fff 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 80% 38%, #fff 50%, transparent 51%), radial-gradient(1px 1px at 34% 48%, #dfe7ff 50%, transparent 51%),
+    radial-gradient(1px 1px at 70% 66%, #fff 50%, transparent 51%), radial-gradient(1.2px 1.2px at 24% 78%, #dfe7ff 50%, transparent 51%); }
+.win.sky-night .stars { opacity: .9; animation: sc-twinkle 4s ease-in-out infinite; }
+.win.sky-night.wx-cloud .stars, .win.sky-night.wx-rain .stars, .win.sky-night.wx-snow .stars { opacity: .15; }
+.win .wx { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .6s; }
+.win.wx-cloud .wx, .win.wx-rain .wx, .win.wx-snow .wx { opacity: 1; }
+.win.sky-night .wx, .win.sky-dusk .wx { filter: brightness(.55); }
+.win.wx-cloud .wx, .win.wx-rain .wx, .win.wx-snow .wx {
+  background:
+    radial-gradient(circle at 25% 18%, rgba(236,240,246,.95) 0 14%, transparent 15%),
+    radial-gradient(circle at 42% 14%, rgba(236,240,246,.95) 0 17%, transparent 18%),
+    radial-gradient(circle at 60% 20%, rgba(226,232,240,.9) 0 13%, transparent 14%),
+    linear-gradient(180deg, rgba(120,132,150,.45), rgba(160,170,186,.25)); }
+.win.wx-rain .wx::after, .win.wx-snow .wx::after { content: ""; position: absolute; inset: -20px 0 0 0; }
+.win.wx-rain .wx::after {
+  background-image: repeating-linear-gradient(104deg, transparent 0 7px, rgba(255,255,255,.65) 7px 8px, transparent 8px 15px);
+  background-size: 15px 15px; animation: sc-rain .45s linear infinite; }
+.win.wx-snow .wx::after {
+  background-image: radial-gradient(1.6px 1.6px at 20% 30%, #fff 60%, transparent 61%), radial-gradient(1.4px 1.4px at 70% 10%, #fff 60%, transparent 61%),
+    radial-gradient(1.8px 1.8px at 45% 65%, #fff 60%, transparent 61%), radial-gradient(1.2px 1.2px at 85% 80%, #fff 60%, transparent 61%);
+  background-size: 100% 50%; animation: sc-snow 3s linear infinite; }
+.win.moving-closing .slats { animation: sc-slats-down .55s linear infinite; }
+.win.moving-opening .slats { animation: sc-slats-up .55s linear infinite; }
+.win .mv { position: absolute; right: 4px; top: 4px; z-index: 3; width: 18px; height: 18px; border-radius: 50%;
+  display: none; place-items: center; background: var(--sc-motion, #fff); color: #263238; --mdc-icon-size: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.35); animation: sc-pulse 1s ease-in-out infinite; }
+.win.moving-opening .mv, .win.moving-closing .mv { display: grid; }
+@keyframes sc-twinkle { 0%, 100% { opacity: .9; } 50% { opacity: .55; } }
+@keyframes sc-rain { to { background-position: -4px 15px; } }
+@keyframes sc-snow { to { background-position: 6px 100%; } }
+@keyframes sc-slats-down { to { background-position: 0 7px; } }
+@keyframes sc-slats-up { to { background-position: 0 -7px; } }
+@keyframes sc-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+@media (prefers-reduced-motion: reduce) {
+  .win .stars, .win .wx::after, .win .slats, .win .mv { animation: none !important; }
+}
+`;
+
+const CSS = SKY_CSS + `
 :host {
   display: block;
   min-height: 100vh;
@@ -315,6 +435,8 @@ button.chip.on { background: color-mix(in srgb, var(--sp-accent) 18%, transparen
 .sunbox { display: flex; align-items: center; gap: 14px; }
 .areas { display: grid; gap: 8px; }
 .area { display: grid; grid-template-columns: 1fr auto auto auto; gap: 10px; align-items: center; font-size: 14px; }
+.area.tm { grid-template-columns: 1fr auto auto; }
+.tmode { margin-bottom: 10px; }
 .area .t { font-variant-numeric: tabular-nums; color: var(--sp-muted); display:flex; align-items:center; gap:2px; --mdc-icon-size: 14px; }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
 .segment { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--sp-chip); }
@@ -334,7 +456,6 @@ button.chip.on { background: color-mix(in srgb, var(--sp-accent) 18%, transparen
 .win { width: 84px; height: 104px; border-radius: 10px; position: relative; overflow: hidden;
   background: linear-gradient(180deg, #8ecdf5 0%, #cfeaff 70%, #e9f5d8 100%);
   box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--primary-text-color) 18%, var(--sp-card)); }
-.win.night { background: linear-gradient(180deg, #1b2440 0%, #33416b 100%); }
 .win .glass { position:absolute; inset: 4px; border-radius: 6px;
   background: linear-gradient(120deg, rgba(255,255,255,.35) 0 18%, transparent 18% 100%); }
 .win .mullion { position:absolute; left: 50%; top: 4px; bottom: 4px; width: 3px; transform: translateX(-50%);
@@ -358,7 +479,18 @@ button.chip.on { background: color-mix(in srgb, var(--sp-accent) 18%, transparen
 .times b { color: var(--primary-text-color); font-weight: 500; }
 .controls { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; margin-top: 2px; }
 .controls input[type=range] { flex: 1; accent-color: var(--state-color); }
-.toggles { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; }
+.actions .break { flex-basis: 100%; height: 0; }
+.typeseg button { display: inline-flex; align-items: center; gap: 6px; --mdc-icon-size: 16px; }
+.win.t-awning .glass, .win.t-awning .mullion, .win.t-garage .glass, .win.t-garage .mullion, .win.t-garage .sunray { display: none; }
+.win.t-awning .slats { background: repeating-linear-gradient(90deg, #ef6c00 0 9px, #fff3e0 9px 18px); border-radius: 0 0 8px 8px; box-shadow: 0 3px 6px rgba(0,0,0,.25); }
+.win.t-awning .slats::after { height: 6px; bottom: -3px; background: radial-gradient(circle at 6px 0, #ef6c00 5px, transparent 6px) 0 0 / 12px 6px repeat-x; border-radius: 0; }
+.win.t-garage { background: linear-gradient(180deg, #263238, #37474f) !important; }
+.win.t-garage .slats { background: repeating-linear-gradient(180deg, #eceff1 0 13px, #b0bec5 13px 15px); }
+.win.t-garage .stars, .win.t-garage .wx { display: none; }
+.toggles { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.am { display: inline-flex; padding: 2px; border-radius: 999px; background: var(--sp-chip); margin-right: 4px; }
+.am button { border: 0; background: transparent; color: inherit; font: inherit; font-size: 12px; padding: 4px 11px; border-radius: 999px; cursor: pointer; }
+.am button.on { background: var(--sp-accent); color: var(--text-primary-color, #fff); font-weight: 600; }
 .compass { flex: none; }
 .menu { position: relative; }
 .menu-list { position: absolute; right: 0; top: 100%; z-index: 3; min-width: 200px; padding: 6px; display: none;
@@ -411,6 +543,14 @@ button.chip.on { background: color-mix(in srgb, var(--sp-accent) 18%, transparen
 .switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: transform .2s; }
 .switch input:checked + span { background: var(--sp-accent); }
 .switch input:checked + span::after { transform: translateX(20px); }
+.ms { display: flex; flex-wrap: wrap; gap: 6px; }
+.ms .chip { cursor: pointer; }
+.ents { display: flex; flex-direction: column; gap: 6px; }
+.ents .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ents .chips:empty { display: none; }
+.ents .chip button { all: unset; cursor: pointer; display: inline-flex; margin-left: 2px; opacity: .7; }
+.ents .chip button:hover { opacity: 1; }
+.ents .chip ha-icon { --mdc-icon-size: 14px; }
 .boolrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; }
 .entity-name { font-size: 12px; color: var(--sp-muted); }
 .savebar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(140%); z-index: 6;
@@ -469,10 +609,12 @@ class ShutterCaptainPanel extends HTMLElement {
     if (first) this._loadConfig();
     if (this._view !== "overview") return;
     // Only redraw when one of our own entities changed.
-    const sig = Object.values(hass.states)
-      .filter((st) => st.attributes.shutter_captain)
+    // Our entities plus the covers themselves (for the moving animation).
+    const ours = Object.values(hass.states).filter((st) => st.attributes.shutter_captain);
+    const sig = ours.map((st) => st.last_updated).join(",") + "#" + Object.values(hass.states)
+      .filter((st) => st.entity_id.startsWith("cover."))
       .map((st) => st.last_updated)
-      .join("|");
+      .join(",");
     if (sig === this._sig) return;
     this._sig = sig;
     this._renderOverview();
@@ -510,7 +652,9 @@ class ShutterCaptainPanel extends HTMLElement {
         <div class="name"><span class="logo"><ha-icon icon="mdi:window-shutter-auto"></ha-icon></span><span class="title-text">${esc(this.t("title"))}</span></div>
         <nav class="tabs">
           <button class="tab" data-view="overview"><ha-icon icon="mdi:view-dashboard-outline"></ha-icon><span class="lbl">${esc(this.t("overview"))}</span></button>
-          <button class="tab" data-view="shutters"><ha-icon icon="mdi:pencil-outline"></ha-icon><span class="lbl">${esc(this.t("shutters"))}</span></button>
+          <button class="tab" data-view="shutters"><ha-icon icon="mdi:window-shutter-cog"></ha-icon><span class="lbl">${esc(this.t("shutters"))}</span></button>
+          <button class="tab" data-view="awnings"><ha-icon icon="mdi:awning-outline"></ha-icon><span class="lbl">${esc(this.t("edit_awnings"))}</span></button>
+          <button class="tab" data-view="garages"><ha-icon icon="mdi:garage-variant"></ha-icon><span class="lbl">${esc(this.t("edit_garages"))}</span></button>
           <button class="tab" data-view="settings"><ha-icon icon="mdi:cog-outline"></ha-icon><span class="lbl">${esc(this.t("settings"))}</span></button>
         </nav>
         <label class="langsel" title="Sprache / Language"><ha-icon icon="mdi:translate"></ha-icon>
@@ -549,7 +693,7 @@ class ShutterCaptainPanel extends HTMLElement {
     main.innerHTML = "";
     this._sig = null;
     if (view === "overview") this._renderOverview();
-    else if (view === "shutters") this._renderShutterList();
+    else if (["shutters", "awnings", "garages"].includes(view)) { this._editType = { shutters: "shutter", awnings: "awning", garages: "garage" }[view]; this._renderShutterList(); }
     else this._renderSettings();
   }
 
@@ -561,7 +705,7 @@ class ShutterCaptainPanel extends HTMLElement {
       this._configError = err;
     }
     if (this._view === "overview") { this._sig = null; this._renderOverview(); }
-    if (this._view === "shutters" && !this._editing) this._renderShutterList();
+    if (["shutters", "awnings", "garages"].includes(this._view) && !this._editing) this._renderShutterList();
     if (this._view === "settings" && !this._draftGlobal) this._renderSettings();
   }
 
@@ -603,7 +747,9 @@ class ShutterCaptainPanel extends HTMLElement {
     return `${d.toLocaleDateString(this.locale, { weekday: "short" })} ${time}`;
   }
 
-  _stateLabel(state) {
+  _stateLabel(state, type = "shutter") {
+    const own = { awning: { sun_protect: "st_extended", down: "st_retracted", up: "st_retracted" }, garage: { up: "st_open", down: "st_closed" } }[type]?.[state];
+    if (own) return this.t(own);
     return this._config?.labels?.entity?.sensor?.status?.state?.[state] || state;
   }
 
@@ -619,10 +765,13 @@ class ShutterCaptainPanel extends HTMLElement {
     }
     if (!main.querySelector("#hero")) {
       main.innerHTML = `<div id="alarm"></div><section class="hero" id="hero"></section>
-        <div class="actions" id="actions"></div><section class="grid" id="grid"></section>`;
+        <div class="actions" id="actions"></div><section class="grid" id="grid"></section><section id="extra"></section>`;
       this._cards.clear();
       this._renderActions();
     }
+    const accent = ACCENT_COLORS[hub.attributes.accent];
+    if (accent) this.style.setProperty("--sp-accent", accent);
+    else this.style.removeProperty("--sp-accent");
     this._renderHero(hub);
     this._renderGrid();
   }
@@ -630,7 +779,9 @@ class ShutterCaptainPanel extends HTMLElement {
   _renderHero(hub) {
     const a = hub.attributes;
     const alarm = this.shadowRoot.getElementById("alarm");
-    alarm.innerHTML = a.alarms?.length
+    alarm.innerHTML = a.emergency
+      ? `<div class="alarm-banner"><ha-icon icon="mdi:alarm-light"></ha-icon>${esc(this.t("emergency_active"))}</div>`
+      : a.alarms?.length
       ? `<div class="alarm-banner"><ha-icon icon="mdi:alert"></ha-icon>${esc(this.t("alarm_active"))}: ${a.alarms.map((x) => esc(this.t("alarms")[x] || x)).join(", ")}</div>`
       : "";
     const flag = (key) => this._entityOnDevice(hub.entity_id, key);
@@ -650,19 +801,38 @@ class ShutterCaptainPanel extends HTMLElement {
         <label class="switch" title="${esc(this.t("auto"))}"><input type="checkbox" data-toggle-input="${esc(id || "")}" ${on ? "checked" : ""}><span></span></label></div>`;
     }).join("");
 
+    // Awnings / garage doors: no areas, no shutter sun protection – their own Automatic | Manual card instead.
+    const dtype = { awnings: "awning", garages: "garage" }[this._type];
+    let typeCard = "";
+    if (dtype) {
+      const devs = this._shutterStates().filter((s) => (s.attributes.device_type || "shutter") === dtype);
+      const allAuto = devs.length > 0 && devs.every((s) => !s.attributes.manual);
+      const allManual = devs.length > 0 && devs.every((s) => s.attributes.manual);
+      const rows = devs.map((s) => {
+        const id = this._entityOnDevice(s.entity_id, "automation");
+        return `<div class="area tm"><span>${esc(s.attributes.name)}</span><span class="t">${esc(this._stateLabel(s.state, dtype))}</span>
+          <label class="switch" title="${esc(this.t("am_auto"))}"><input type="checkbox" data-toggle-input="${esc(id || "")}" ${s.attributes.manual ? "" : "checked"}><span></span></label></div>`;
+      }).join("");
+      typeCard = `<div class="card"><div class="eyebrow">${esc(this.t("auto"))} · ${esc(this.t(dtype === "awning" ? "c_awnings" : "c_garage"))}</div>
+        <div class="segment tmode">${[["auto", "am_auto", allAuto], ["manual", "am_manual", allManual]].map(([k, l, on]) => `<button data-tmode="${k}" class="${on ? "active" : ""}">${esc(this.t(l))}</button>`).join("")}</div>
+        <div class="areas">${rows || `<div class="entity-name">${esc(this.t("none_of_type"))}</div>`}</div></div>`;
+    }
+    const sunCard = `<div class="card"><div class="eyebrow">${esc(this.t("sun"))}</div>
+        <div class="sunbox">${this._compass(Number(a.sun_azimuth), elev, null, null, 72)}
+          <div><div class="big">${elev > 0 ? "☀" : "☾"} ${Math.round(elev)}°</div>
+          <div class="entity-name">${esc(this.t("azimuth"))} ${Math.round(a.sun_azimuth)}° · ${esc(this.t("elevation"))} ${Math.round(elev)}°</div></div></div></div>`;
     const hero = this.shadowRoot.getElementById("hero");
     hero.innerHTML = `
       <div class="card"><div class="eyebrow">${esc(this.t("today"))}</div>
         <div class="big">${esc(this.t(a.free_day ? "free_day" : "workday"))}</div>
         <div class="entity-name">${esc(this.t(a.free_tomorrow ? "tomorrow_free" : "tomorrow_work"))}</div>
-        <div class="chips">${flagChip("vacation", "mdi:beach")}${flagChip("school_holiday", "mdi:school-outline")}
+        <div class="chips">${flagChip("master", "mdi:power")}${flagChip("vacation", "mdi:beach")}${flagChip("school_holiday", "mdi:school-outline")}
           ${a.summer ? `<span class="chip"><ha-icon icon="mdi:white-balance-sunny"></ha-icon>${esc(this.t("summer"))}</span>` : ""}
           ${a.xmas ? `<span class="chip"><ha-icon icon="mdi:pine-tree"></ha-icon>${esc(this.t("xmas"))}</span>` : ""}</div></div>
-      <div class="card"><div class="eyebrow">${esc(this.t("sun"))}</div>
-        <div class="sunbox">${this._compass(Number(a.sun_azimuth), elev, null, null, 72)}
-          <div><div class="big">${elev > 0 ? "☀" : "☾"} ${Math.round(elev)}°</div>
-          <div class="entity-name">${esc(this.t("azimuth"))} ${Math.round(a.sun_azimuth)}° · ${esc(this.t("elevation"))} ${Math.round(elev)}°</div></div></div></div>
-      <div class="card"><div class="eyebrow">${esc(this.t("auto"))}</div><div class="areas">${areaRows}</div></div>`;
+      ${dtype === "garage" ? "" : sunCard}
+      ${dtype ? typeCard : `<div class="card"><div class="eyebrow">${esc(this.t("auto"))}</div><div class="areas">${areaRows}</div></div>`}`;
+    hero.querySelectorAll("[data-tmode]").forEach((b) => b.addEventListener("click", () =>
+      this._hass.callService(DOMAIN, "command", { action: b.dataset.tmode, device_type: dtype })));
     hero.querySelectorAll("[data-toggle]").forEach((b) => b.addEventListener("click", () => {
       if (b.dataset.toggle) this._hass.callService("switch", "toggle", { entity_id: b.dataset.toggle });
     }));
@@ -673,27 +843,51 @@ class ShutterCaptainPanel extends HTMLElement {
 
   _renderActions() {
     const el = this.shadowRoot.getElementById("actions");
+    this._type = this._type || "all";
+    const dtype = { awnings: "awning", garages: "garage" }[this._type];
+    const lbl = (k) => this.t(dtype === "awning" ? { open: "aw_extend", close: "aw_retract" }[k] || k : k);
     el.innerHTML = `
-      <div class="segment">${["all", ...AREAS].map((ar) => `<button data-area="${ar}" class="${this._area === ar ? "active" : ""}">${esc(this.t(ar))}</button>`).join("")}</div>
+      <div class="segment typeseg">${[["all", "t_all", "mdi:view-grid-outline"], ["groups", "c_groups", "mdi:window-shutter-cog"], ["shutters", "c_shutters", "mdi:window-shutter"], ["awnings", "c_awnings", "mdi:awning-outline"], ["garages", "c_garage", "mdi:garage-variant"]]
+        .map(([k, l, ic]) => `<button data-type="${k}" class="${this._type === k ? "active" : ""}"><ha-icon icon="${ic}"></ha-icon>${esc(this.t(l))}</button>`).join("")}</div>
+      <div class="break"></div>
+      ${dtype ? "" : `<div class="segment">${["all", ...AREAS].map((ar) => `<button data-area="${ar}" class="${this._area === ar ? "active" : ""}">${esc(this.t(ar))}</button>`).join("")}</div>`}
       <span class="spacer"></span>
-      <button class="btn" data-cmd="open"><ha-icon icon="mdi:arrow-up-bold"></ha-icon>${esc(this.t("open"))}</button>
-      <button class="btn" data-cmd="sun_protect"><ha-icon icon="mdi:weather-sunny"></ha-icon>${esc(this.t("sun_protect"))}</button>
-      <button class="btn" data-cmd="close"><ha-icon icon="mdi:arrow-down-bold"></ha-icon>${esc(this.t("close"))}</button>
+      <button class="btn" data-cmd="open"><ha-icon icon="mdi:arrow-up-bold"></ha-icon>${esc(lbl("open"))}</button>
+      ${dtype ? "" : `<button class="btn" data-cmd="sun_protect"><ha-icon icon="mdi:weather-sunny"></ha-icon>${esc(this.t("sun_protect"))}</button>`}
+      <button class="btn" data-cmd="close"><ha-icon icon="mdi:arrow-down-bold"></ha-icon>${esc(lbl("close"))}</button>
       <button class="btn primary" data-cmd="auto"><ha-icon icon="mdi:autorenew"></ha-icon>${esc(this.t("auto"))}</button>`;
+    el.querySelectorAll("[data-type]").forEach((b) => b.addEventListener("click", () => {
+      this._type = b.dataset.type;
+      // Areas, sun protection and the hero cards depend on the type.
+      this._renderActions();
+      const hub = this._hub();
+      if (hub) this._renderHero(hub);
+      this._renderGrid();
+    }));
     el.querySelectorAll("[data-area]").forEach((b) => b.addEventListener("click", () => {
       this._area = b.dataset.area;
       el.querySelectorAll("[data-area]").forEach((x) => x.classList.toggle("active", x === b));
       this._renderGrid();
     }));
     el.querySelectorAll("[data-cmd]").forEach((b) => b.addEventListener("click", () =>
-      this._hass.callService(DOMAIN, "command", { action: b.dataset.cmd, area: this._area })));
+      this._hass.callService(DOMAIN, "command", dtype ? { action: b.dataset.cmd, device_type: dtype } : { action: b.dataset.cmd, area: this._area })));
   }
 
   _renderGrid() {
     const grid = this.shadowRoot.getElementById("grid");
     if (!grid) return;
-    const shutters = this._shutterStates().filter((s) => this._area === "all" || s.attributes.area === this._area
-      || [s.attributes.up_mode, s.attributes.down_mode].some((m) => String(m).replace("_auto", "") === this._area));
+    const type = this._type || "all";
+    const wantType = { shutters: "shutter", awnings: "awning", garages: "garage" }[type];
+    const shutters = this._shutterStates()
+      .filter((s) => type === "all" || (wantType && (s.attributes.device_type || "shutter") === wantType))
+      .filter((s) => (wantType && wantType !== "shutter") || this._area === "all" || s.attributes.area === this._area
+        || [s.attributes.up_mode, s.attributes.down_mode].some((m) => String(m).replace("_auto", "") === this._area));
+    this._renderExtra();
+    if (!shutters.length && type !== "all") {
+      grid.innerHTML = "";
+      this._cards.clear();
+      return;
+    }
     if (!shutters.length) {
       grid.innerHTML = `<div class="card empty" style="grid-column:1/-1"><ha-icon icon="mdi:window-shutter"></ha-icon>
         <h2>${esc(this.t("empty_title"))}</h2><p>${esc(this.t("empty_text"))}</p>
@@ -716,11 +910,47 @@ class ShutterCaptainPanel extends HTMLElement {
     });
   }
 
+  /** Covers Shutter Captain does not automate (and the group devices) as simple control tiles. */
+  _renderExtra() {
+    const box = this.shadowRoot.getElementById("extra");
+    if (!box) return;
+    if (!this.shadowRoot.getElementById("control-css")) {
+      const st = document.createElement("style");
+      st.id = "control-css";
+      st.textContent = CONTROL_CSS;
+      this.shadowRoot.appendChild(st);
+    }
+    const type = this._type || "all";
+    const managed = new Set(this._shutterStates().map((s) => s.attributes.cover_entity));
+    const map = { groups: "groups", shutters: "shutters", awnings: "awnings", garages: "garage" };
+    const cats = type === "all" ? ["groups", "shutters", "awnings", "garage"] : [map[type]];
+    const ids = Object.keys(this._hass.states)
+      .filter((id) => id.startsWith("cover.") && !managed.has(id))
+      .sort((a, b) => this._friendly(a).localeCompare(this._friendly(b)));
+    const sections = cats.map((cat) => {
+      const list = ids.filter((id) => this._coverCategory(id) === cat);
+      if (!list.length) return "";
+      const title = cat === "groups" ? this.t("c_groups") : `${this.t(`c_${cat}`)} · ${this.t("other_devices")}`;
+      const icon = COVER_GROUPS.find(([k]) => k === cat)?.[1] || "mdi:window-shutter";
+      return `<div class="ctl-sec"><ha-icon icon="${icon}"></ha-icon>${esc(title)}<small>${list.length}</small></div>
+        <div class="ctl-grid">${list.map((id) => this._controlTile(id, cat, false)).join("")}</div>`;
+    }).join("");
+    box.innerHTML = sections;
+    box.querySelectorAll("[data-cact]").forEach((b) => b.addEventListener("click", () => this._controlAction(b.dataset.id, b.dataset.cact)));
+    box.querySelectorAll("input[data-cpos]").forEach((r) => {
+      r.addEventListener("pointerdown", () => { this._dragging = true; });
+      r.addEventListener("change", () => {
+        this._dragging = false;
+        this._hass.callService("cover", "set_cover_position", { entity_id: r.dataset.cpos, position: Number(r.value) });
+      });
+    });
+  }
+
   _createCard(s) {
     const card = document.createElement("div");
     card.className = "card shutter";
     card.innerHTML = `
-      <div class="win"><div class="glass"></div><div class="mullion"></div><div class="sunray"></div><div class="slats"></div><div class="badge"></div></div>
+      <div class="win"><div class="stars"></div><div class="wx"></div><div class="glass"></div><div class="mullion"></div><div class="sunray"></div><div class="slats"></div><div class="mv"><ha-icon></ha-icon></div><div class="badge"></div></div>
       <div>
         <div class="head"><div class="titles"><h3 class="nm"></h3><div class="status"><ha-icon></ha-icon><span></span></div></div>
           <div class="compass"></div>
@@ -731,6 +961,7 @@ class ShutterCaptainPanel extends HTMLElement {
               <button data-act="pause180"><ha-icon icon="mdi:pause"></ha-icon>${esc(this.t("pause_3h"))}</button>
               <button data-act="pause0"><ha-icon icon="mdi:pause-octagon-outline"></ha-icon>${esc(this.t("pause_inf"))}</button>
               <button data-act="sun"><ha-icon icon="mdi:weather-sunny"></ha-icon>${esc(this.t("sun_protect"))}</button>
+              <button data-act="vent"><ha-icon icon="mdi:weather-windy"></ha-icon>${esc(this.t("vent"))}</button>
               <button data-act="edit"><ha-icon icon="mdi:pencil-outline"></ha-icon>${esc(this.t("edit"))}</button>
             </div></div></div>
         <div class="reason"></div>
@@ -743,6 +974,7 @@ class ShutterCaptainPanel extends HTMLElement {
         <input type="range" min="0" max="100" step="1" aria-label="${esc(this.t("position"))}">
       </div>
       <div class="toggles">
+        <span class="am"><button data-am="on">${esc(this.t("am_auto"))}</button><button data-am="off">${esc(this.t("am_manual"))}</button></span>
         <button class="chip" data-auto="auto_up"><ha-icon icon="mdi:arrow-up-bold-box-outline"></ha-icon>${esc(this.t("auto_up"))}</button>
         <button class="chip" data-auto="auto_down"><ha-icon icon="mdi:arrow-down-bold-box-outline"></ha-icon>${esc(this.t("auto_down"))}</button>
         <button class="chip" data-auto="auto_sun"><ha-icon icon="mdi:weather-sunny"></ha-icon>${esc(this.t("auto_sun"))}</button>
@@ -752,14 +984,21 @@ class ShutterCaptainPanel extends HTMLElement {
     range.addEventListener("pointerdown", () => { this._dragging = true; });
     range.addEventListener("change", () => {
       this._dragging = false;
+      const now = Number(this._hass.states[card._cover]?.attributes?.current_position ?? 100);
+      if (Number(range.value) < now && !this._okToClose(card._cover)) { range.value = now; return; }
       this._hass.callService("cover", "set_cover_position", { entity_id: card._cover, position: Number(range.value) });
     });
     card.addEventListener("click", (ev) => {
-      const btn = ev.target.closest("[data-act],[data-auto]");
+      const btn = ev.target.closest("[data-act],[data-auto],[data-am]");
       const menu = card.querySelector(".menu");
       if (!btn) { menu.classList.remove("open"); return; }
       const act = btn.dataset.act;
       const cover = card._cover;
+      if (btn.dataset.am) {
+        const sw = this._entityOnDevice(card._status, "automation");
+        if (sw) this._hass.callService("switch", btn.dataset.am === "on" ? "turn_on" : "turn_off", { entity_id: sw });
+        return;
+      }
       if (btn.dataset.auto) {
         const id = this._entityOnDevice(card._status, btn.dataset.auto);
         if (id) this._hass.callService("switch", "toggle", { entity_id: id });
@@ -768,7 +1007,7 @@ class ShutterCaptainPanel extends HTMLElement {
       if (act === "menu") { menu.classList.toggle("open"); ev.stopPropagation(); return; }
       menu.classList.remove("open");
       if (act === "open") this._hass.callService("cover", "open_cover", { entity_id: cover });
-      if (act === "close") this._hass.callService("cover", "close_cover", { entity_id: cover });
+      if (act === "close" && this._okToClose(cover)) this._hass.callService("cover", "close_cover", { entity_id: cover });
       if (act === "stop") this._hass.callService("cover", "stop_cover", { entity_id: cover });
       if (act === "resume") this._hass.callService(DOMAIN, "resume", { entity_id: cover });
       if (act?.startsWith("pause")) {
@@ -776,7 +1015,8 @@ class ShutterCaptainPanel extends HTMLElement {
         this._hass.callService(DOMAIN, "pause", minutes ? { entity_id: cover, minutes } : { entity_id: cover });
       }
       if (act === "sun") this._hass.callService("cover", "set_cover_position", { entity_id: cover, position: card._sunLevel });
-      if (act === "edit") { this._setView("shutters"); this._openEditor("edit", [card._subentry]); }
+      if (act === "vent") this._hass.callService(DOMAIN, "vent", { entity_id: cover });
+      if (act === "edit") { this._setView({ awning: "awnings", garage: "garages" }[card._dtype] || "shutters"); this._openEditor("edit", [card._subentry]); }
     });
     return card;
   }
@@ -792,7 +1032,17 @@ class ShutterCaptainPanel extends HTMLElement {
     card.style.setProperty("--state-color", style.color);
     card.querySelector(".nm").textContent = a.name;
     card.querySelector(".status ha-icon").setAttribute("icon", style.icon);
-    let label = this._stateLabel(state);
+    const dtype = a.device_type || "shutter";
+    card._dtype = dtype;
+    // Garage doors: no schedule, no sun – only the Automatic/Manual switch.
+    const isGarage = dtype === "garage";
+    // Awnings: no schedule either – only their sun automation.
+    const isAwning = dtype === "awning";
+    card.querySelectorAll("[data-auto]").forEach((b) => { b.hidden = isGarage || (isAwning && b.dataset.auto !== "auto_sun"); });
+    card.querySelector(".times").hidden = isGarage || isAwning;
+    card.querySelector(".compass").hidden = isGarage;
+    card.querySelector("[data-act=\"sun\"]")?.toggleAttribute("hidden", isGarage);
+    let label = this._stateLabel(state, dtype);
     if (a.manual_until) label += ` · ${this.t("until")} ${new Date(a.manual_until).toLocaleTimeString(this.locale, { hour: "2-digit", minute: "2-digit" })}`;
     card.querySelector(".status span").textContent = label;
     card.querySelector(".reason").textContent = REASONS[this.lang][a.reason] || "";
@@ -803,9 +1053,19 @@ class ShutterCaptainPanel extends HTMLElement {
     const win = card.querySelector(".win");
     const hub = this._hub();
     const elev = Number(hub?.attributes.sun_elevation ?? 0);
-    win.classList.toggle("night", elev < -4);
+    applySky(win, elev, Number(hub?.attributes.sun_azimuth ?? 0), hub?.attributes.weather);
+    const motion = motionOf(this._hass.states[a.cover_entity]?.state);
+    win.classList.toggle("moving-opening", motion === "opening");
+    win.classList.toggle("moving-closing", motion === "closing");
+    if (motion) win.querySelector(".mv ha-icon").setAttribute("icon", motion === "opening" ? "mdi:arrow-up" : "mdi:arrow-down");
     win.classList.toggle("sunny", state === "sun_protect" || state === "heat_protect" || !!a.sun_checks?.azimuth);
-    card.querySelector(".slats").style.height = pos === null ? "0" : `calc(${100 - pos}% - ${(100 - pos) * 0.08}px)`;
+    win.classList.toggle("t-awning", dtype === "awning");
+    win.classList.toggle("t-garage", dtype === "garage");
+    // Awning: the fabric grows with the position (extended = open). Shutter/garage: the curtain comes down.
+    const cover = dtype === "awning" ? pos : (pos === null ? null : 100 - pos);
+    card.querySelector(".slats").style.height = cover === null ? "0" : `calc(${cover}% - ${cover * 0.08}px)`;
+    const typeIcon = { awning: "mdi:awning-outline", garage: "mdi:garage-variant" }[dtype];
+    if (typeIcon && (state === "up" || state === "down" || state === "sun_protect")) card.querySelector(".status ha-icon").setAttribute("icon", dtype === "garage" ? (state === "up" ? "mdi:garage-open-variant" : "mdi:garage-variant") : (state === "sun_protect" ? "mdi:awning" : "mdi:awning-outline"));
     card.querySelector(".badge").textContent = pos === null ? "?" : `${pos}%`;
     const range = card.querySelector("input[type=range]");
     if (!this._dragging && pos !== null) range.value = pos;
@@ -818,6 +1078,7 @@ class ShutterCaptainPanel extends HTMLElement {
       card.querySelector(".compass").innerHTML = a.sun_mode === "off" ? "" : this._compass(azimuth, elev, a.window_azimuth, a.azimuth_range, 40);
     }
     card.querySelectorAll("[data-auto]").forEach((b) => b.classList.toggle("on", !!a[b.dataset.auto]));
+    card.querySelectorAll("[data-am]").forEach((b) => b.classList.toggle("on", (b.dataset.am === "on") === !a.manual));
     const wc = card.querySelector(".win-chip");
     if (a.window && a.window !== "closed") {
       wc.hidden = false;
@@ -864,14 +1125,17 @@ class ShutterCaptainPanel extends HTMLElement {
     const cfg = this._config;
     const sel = (key, val) => this._optionLabel(key, val);
     const q = this._search.toLowerCase();
-    const rows = cfg.shutters.filter((s) => !q || s.title.toLowerCase().includes(q) || String(s.data.cover_entity).includes(q));
+    const etype = this._editType || "shutter";
+    const rows = cfg.shutters
+      .filter((s) => (s.data.device_type || "shutter") === etype)
+      .filter((s) => !q || s.title.toLowerCase().includes(q) || String(s.data.cover_entity).includes(q));
     const admin = cfg.is_admin;
     main.innerHTML = `
       ${admin ? "" : `<div class="notice">${esc(this.t("readonly"))}</div>`}
-      <div class="editor-head"><h2>${esc(this.t("shutters"))}</h2>
+      <div class="editor-head"><h2>${esc(this.t({ shutter: "shutters", awning: "edit_awnings", garage: "edit_garages" }[this._editType || "shutter"]))}</h2>
         <div class="input searchbox"><ha-icon icon="mdi:magnify"></ha-icon><input id="search" placeholder="${esc(this.t("search"))}" value="${esc(this._search)}"></div>
         ${admin && this._selected.size > 1 ? `<button class="btn" id="bulk"><ha-icon icon="mdi:checkbox-multiple-marked-outline"></ha-icon>${esc(this.t("bulk_edit"))} (${this._selected.size})</button>` : ""}
-        ${admin ? `<button class="btn primary" id="add"><ha-icon icon="mdi:plus"></ha-icon>${esc(this.t("add"))}</button>` : ""}</div>
+        ${admin ? `<button class="btn primary" id="add"><ha-icon icon="mdi:plus"></ha-icon>${esc(this.t({ shutter: "add", awning: "add_awning", garage: "add_garage" }[this._editType || "shutter"]))}</button>` : ""}</div>
       ${cfg.shutters.length ? `<div class="card table-wrap"><table class="table"><thead><tr>
         <th style="width:40px"><input type="checkbox" id="selall" ${this._selected.size && this._selected.size === cfg.shutters.length ? "checked" : ""}></th>
         <th>${esc(this.t("col_name"))}</th><th>${esc(this.t("col_open"))}</th><th>${esc(this.t("col_close"))}</th>
@@ -933,7 +1197,7 @@ class ShutterCaptainPanel extends HTMLElement {
     const cfg = this._config;
     const find = (id) => cfg.shutters.find((s) => s.subentry_id === id);
     let data;
-    if (mode === "new") data = { ...cfg.shutter_defaults };
+    if (mode === "new") data = { ...cfg.shutter_defaults, device_type: this._editType || "shutter", ...(this._editType === "garage" ? { up_mode: "off", down_mode: "off" } : this._editType === "awning" ? { up_mode: "off", down_mode: "off", open_level: 100, close_level: 0, sun_level: 100, sun_mode: "azimuth" } : {}) };
     else if (mode === "duplicate") data = { ...find(ids[0]).data, name: "", cover_entity: null };
     else data = { ...find(ids[0]).data };
     this._editing = { mode, ids, data, original: { ...data }, changed: new Set() };
@@ -946,7 +1210,7 @@ class ShutterCaptainPanel extends HTMLElement {
     const cfg = this._config;
     const titleMap = { new: this.t("add"), duplicate: this.t("duplicate"), bulk: `${this.t("bulk_edit")} (${ed.ids.length})` };
     const title = titleMap[ed.mode] || cfg.shutters.find((s) => s.subentry_id === ed.ids[0])?.title;
-    const icons = { main: "mdi:window-shutter", window: "mdi:window-open-variant", sun: "mdi:weather-sunny", extra: "mdi:tune-variant" };
+    const icons = { main: "mdi:window-shutter", window: "mdi:window-open-variant", sun: "mdi:weather-sunny", conditions: "mdi:function-variant", stages: "mdi:stairs-down", extra: "mdi:tune-variant" };
     const labels = cfg.labels?.config_subentries?.shutter?.step || {};
     const hidden = ed.mode === "bulk" ? new Set(["name", "cover_entity"]) : new Set();
     main.innerHTML = `
@@ -954,7 +1218,7 @@ class ShutterCaptainPanel extends HTMLElement {
         ${ed.mode === "edit" ? `<button class="btn danger" id="del"><ha-icon icon="mdi:delete-outline"></ha-icon>${esc(this.t("delete"))}</button>` : ""}</div>
       ${ed.mode === "bulk" ? `<div class="notice">${esc(this.t("bulk_hint").replace("{n}", ed.ids.length))}</div>` : ""}
       <div class="sections">${Object.entries(cfg.shutter_schema).map(([section, fields], i) => `
-        <details class="card section" ${i < 2 || ed.mode !== "edit" ? "open" : ""}>
+        <details class="card section" data-section="${section}" ${i < 2 || ed.mode !== "edit" ? "open" : ""}>
           <summary><span class="ico"><ha-icon icon="${icons[section]}"></ha-icon></span>${esc(labels[section]?.title || section)}<ha-icon class="chev" icon="mdi:chevron-down"></ha-icon></summary>
           <div class="fields">${fields.filter((f) => !hidden.has(f.key)).map((f) => this._fieldHtml(f, ed.data[f.key], labels[section])).join("")}</div>
         </details>`).join("")}</div>`;
@@ -985,6 +1249,8 @@ class ShutterCaptainPanel extends HTMLElement {
   }
 
   /* ------------------------------------------------------- settings */
+  _sg() { return SETTINGS_GROUPS[this._settingsGroup] ? this._settingsGroup : "shutters"; }
+
   _renderSettings() {
     const main = this.shadowRoot.getElementById("main");
     if (this._configError) {
@@ -999,17 +1265,19 @@ class ShutterCaptainPanel extends HTMLElement {
     const icons = {
       area_living: "mdi:sofa-outline", area_sleep: "mdi:bed-outline", area_children: "mdi:teddy-bear", astro: "mdi:weather-sunset",
       days: "mdi:calendar-star", seasons: "mdi:pine-tree", brightness: "mdi:brightness-6", special: "mdi:clock-star-four-points-outline",
-      alarms: "mdi:alarm-light-outline", behaviour: "mdi:hand-back-right-outline",
+      alarms: "mdi:alarm-light-outline", behaviour: "mdi:hand-back-right-outline", appearance: "mdi:palette-outline", awnings: "mdi:awning-outline", garages: "mdi:garage-variant",
     };
     main.innerHTML = `
       ${cfg.is_admin ? "" : `<div class="notice">${esc(this.t("readonly"))}</div>`}
-      <div class="editor-head"><h2>${esc(this.t("settings"))}</h2></div>
-      <div class="sections">${Object.entries(cfg.global_schema).map(([section, fields], i) => `
+      <div class="editor-head"><h2>${esc(this.t("settings"))}</h2>
+        <div class="segment">${Object.keys(SETTINGS_GROUPS).map((g) => `<button data-sg="${g}" class="${this._sg() === g ? "active" : ""}">${esc(this.t("sg_" + g))}</button>`).join("")}</div></div>
+      <div class="sections">${SETTINGS_GROUPS[this._sg()].filter((section) => cfg.global_schema[section]).map((section, i) => [section, cfg.global_schema[section], i]).map(([section, fields, i]) => `
         <details class="card section" ${i < 1 ? "open" : ""}>
           <summary><span class="ico"><ha-icon icon="${icons[section] || "mdi:cog"}"></ha-icon></span>${esc(labels[section]?.title || section)}<ha-icon class="chev" icon="mdi:chevron-down"></ha-icon></summary>
           ${labels[section]?.description ? `<div class="fields"><div class="field wide"><div class="help">${esc(labels[section].description)}</div></div></div>` : ""}
           <div class="fields">${fields.map((f) => this._fieldHtml(f, draft.data[f.key], labels[section])).join("")}</div>
         </details>`).join("")}</div>`;
+    main.querySelectorAll("[data-sg]").forEach((b) => b.addEventListener("click", () => { this._settingsGroup = b.dataset.sg; this._renderSettings(); }));
     this._wireFields(main, draft.data, draft.changed, cfg.global_schema);
     this._applyShowIf(main, draft.data, cfg.global_schema);
     if (!cfg.is_admin) main.querySelectorAll("input,select").forEach((i) => { i.disabled = true; });
@@ -1041,11 +1309,22 @@ class ShutterCaptainPanel extends HTMLElement {
       const opts = this._config.labels?.selector?.[tk]?.options || {};
       control = `<div class="input"><select id="${id}" data-key="${f.key}">${f.options.map((o) =>
         `<option value="${esc(o)}" ${String(v) === o ? "selected" : ""}>${esc(opts[o] || o)}</option>`).join("")}</select></div>`;
+    } else if (f.kind === "multiselect") {
+      const opts = this._config.labels?.selector?.[f.key]?.options || {};
+      const chosen = Array.isArray(value) ? value : [];
+      control = `<div class="ms">${f.options.map((o) => `<button type="button" class="chip ${chosen.includes(o) ? "on" : ""}" data-ms-key="${f.key}" data-ms-val="${esc(o)}">${esc(opts[o] || o)}</button>`).join("")}</div>`;
+    } else if (f.kind === "entities") {
+      const list = `dl_${f.key}`;
+      const chosen = Array.isArray(value) ? value : [];
+      const ids = Object.keys(this._hass.states).filter((e) => !f.domains.length || f.domains.includes(e.split(".")[0])).sort();
+      control = `<div class="ents" data-ents-key="${f.key}"><div class="chips">${chosen.map((e) => `<span class="chip">${esc(this._friendly(e))}<button type="button" data-ents-del="${esc(e)}" title="${esc(e)}"><ha-icon icon="mdi:close"></ha-icon></button></span>`).join("")}</div>
+        <div class="input"><ha-icon icon="mdi:plus"></ha-icon><input id="${id}" list="${list}" data-ents-add="${f.key}" placeholder="${esc(f.domains[0] || "sensor")}.…" autocomplete="off"></div>
+        <datalist id="${list}">${ids.filter((e) => !chosen.includes(e)).map((e) => `<option value="${esc(e)}">${esc(this._friendly(e))}</option>`).join("")}</datalist></div>`;
     } else if (f.kind === "entity") {
       const list = `dl_${f.key}`;
-      const ids = Object.keys(this._hass.states).filter((e) => f.domains.includes(e.split(".")[0])).sort();
+      const ids = Object.keys(this._hass.states).filter((e) => !f.domains.length || f.domains.includes(e.split(".")[0])).sort();
       control = `<div class="input"><ha-icon icon="mdi:shape-outline"></ha-icon><input id="${id}" list="${list}" data-key="${f.key}" value="${esc(v)}"
-        placeholder="${esc(f.domains[0])}.…" autocomplete="off"></div>
+        placeholder="${esc(f.domains[0] || "sensor")}.…" autocomplete="off"></div>
         <datalist id="${list}">${ids.map((e) => `<option value="${esc(e)}">${esc(this._friendly(e))}</option>`).join("")}</datalist>
         <div class="entity-name" data-name-for="${f.key}">${v ? esc(this._friendly(v)) : ""}</div>`;
     } else {
@@ -1056,6 +1335,46 @@ class ShutterCaptainPanel extends HTMLElement {
 
   _wireFields(root, data, changed, schema) {
     const fields = Object.fromEntries(Object.values(schema).flat().map((f) => [f.key, f]));
+    root.querySelectorAll("[data-ms-key]").forEach((btn) => btn.addEventListener("click", () => {
+      const key = btn.dataset.msKey;
+      const list = new Set(Array.isArray(data[key]) ? data[key] : []);
+      if (list.has(btn.dataset.msVal)) list.delete(btn.dataset.msVal); else list.add(btn.dataset.msVal);
+      data[key] = fields[key].options.filter((o) => list.has(o));
+      btn.classList.toggle("on", list.has(btn.dataset.msVal));
+      changed.add(key);
+      root.querySelector(`[data-field="${key}"]`)?.classList.add("changed");
+      this._showSavebar(true);
+    }));
+    const setEnts = (key, list) => {
+      data[key] = list;
+      changed.add(key);
+      const field = root.querySelector(`[data-field="${key}"]`);
+      if (field) {
+        field.classList.add("changed");
+        const tmp = document.createElement("div");
+        tmp.innerHTML = this._fieldHtml(fields[key], list);
+        const fresh = tmp.querySelector(".ents");
+        field.querySelector(".ents").replaceWith(fresh);
+        wireEnts(fresh);
+      }
+      this._applyShowIf(root, data, schema);
+      this._showSavebar(true);
+    };
+    const wireEnts = (box) => {
+      const key = box.dataset.entsKey;
+      box.querySelectorAll("[data-ents-del]").forEach((b) => b.addEventListener("click", () =>
+        setEnts(key, (data[key] || []).filter((e) => e !== b.dataset.entsDel))));
+      const input = box.querySelector("[data-ents-add]");
+      const add = () => {
+        const v = input.value.trim();
+        if (!v || !this._hass.states[v]) return;
+        const list = Array.isArray(data[key]) ? data[key] : [];
+        if (!list.includes(v)) setEnts(key, [...list, v]); else input.value = "";
+      };
+      input.addEventListener("change", add);
+      input.addEventListener("keydown", (ev) => { if (ev.key === "Enter") { ev.preventDefault(); add(); } });
+    };
+    root.querySelectorAll("[data-ents-key]").forEach(wireEnts);
     root.querySelectorAll("[data-key]").forEach((input) => {
       const key = input.dataset.key;
       const f = fields[key];
@@ -1091,8 +1410,13 @@ class ShutterCaptainPanel extends HTMLElement {
       // Hide settings that cannot have any effect in the current configuration.
       const dep = DEPENDS[f.key];
       if (dep) show = show && dep(data);
+      // Fields that make no sense for awnings / garage doors.
+      const hideFor = TYPE_HIDDEN_FIELDS[data.device_type || "shutter"];
+      if (hideFor && hideFor.includes(f.key)) show = false;
       el.hidden = !show;
     }
+    const hiddenSections = TYPE_HIDDEN_SECTIONS[data.device_type || "shutter"] || [];
+    root.querySelectorAll("[data-section]").forEach((sec) => { sec.hidden = hiddenSections.includes(sec.dataset.section); });
   }
 
   /* ------------------------------------------------------------ save */
@@ -1140,6 +1464,18 @@ class ShutterCaptainPanel extends HTMLElement {
   }
 }
 
+// Shutters, awnings and garage doors have completely separate settings; appearance is the panel itself.
+const SETTINGS_GROUPS = {
+  shutters: ["area_living", "area_sleep", "area_children", "astro", "days", "brightness", "seasons", "special", "alarms", "behaviour"],
+  awnings: ["awnings"],
+  garages: ["garages"],
+  appearance: ["appearance"],
+};
+const TYPE_HIDDEN_SECTIONS = { awning: ["window", "stages"], garage: ["window", "sun", "conditions", "stages", "extra"] };
+const TYPE_HIDDEN_FIELDS = {
+  awning: ["open_tilt", "close_tilt", "elevation", "keep_sun", "heat_protection", "heat_temp", "sun_tilt", "alarm_fire", "alarm_rain", "alarm_wind1", "alarm_wind2", "alarm_frost"],
+  garage: ["up_mode", "down_mode", "open_level", "close_level", "open_tilt", "close_tilt", "elevation"],
+};
 const sunOn = (d) => d.sun_mode && d.sun_mode !== "off";
 const sunHas = (t) => (d) => ({
   in_out_temp: ["in", "out"], azimuth: ["az"], all: ["in", "out", "az"], out_temp_azimuth: ["out", "az"], out_temp: ["out"], in_temp: ["in"],
@@ -1148,12 +1484,13 @@ const hasWindow = (d) => !!d.window_entity;
 const DEPENDS = {
   elevation: (d) => d.up_mode === "elevation" || d.down_mode === "elevation",
   tilt_entity: hasWindow,
-  window_action: hasWindow,
+  window_action: (d) => hasWindow(d) && (d.window_profile || "custom") === "custom",
   window_open_level: hasWindow,
   window_tilt_level: (d) => hasWindow(d),
-  lockout: hasWindow,
-  vent_on_close: hasWindow,
-  drive_after_close: hasWindow,
+  lockout: (d) => hasWindow(d) && (d.window_profile || "custom") === "custom",
+  vent_on_close: (d) => hasWindow(d) && (d.window_profile || "custom") === "custom",
+  drive_after_close: (d) => hasWindow(d) && (d.window_profile || "custom") === "custom",
+  window_profile: hasWindow,
   window_open_delay: hasWindow,
   window_close_delay: hasWindow,
   sun_level: sunOn,
@@ -1172,6 +1509,42 @@ const DEPENDS = {
   keep_sun: sunOn,
   sun_end_delay: sunOn,
   heat_temp: (d) => !!d.heat_protection,
+  sun_start_delay: sunOn,
+  sun_month_from: sunOn,
+  sun_month_to: sunOn,
+  forecast_temp: sunOn,
+  weather_conditions: sunOn,
+  cond_logic: (d) => d.cond_mode && d.cond_mode !== "off",
+  cond1_entity: (d) => d.cond_mode && d.cond_mode !== "off",
+  cond1_op: (d) => d.cond_mode !== "off" && !!d.cond1_entity,
+  cond1_value: (d) => d.cond_mode !== "off" && !!d.cond1_entity && ["gt", "lt", "eq", "ne"].includes(d.cond1_op),
+  cond2_entity: (d) => d.cond_mode && d.cond_mode !== "off",
+  cond2_op: (d) => d.cond_mode !== "off" && !!d.cond2_entity,
+  cond2_value: (d) => d.cond_mode !== "off" && !!d.cond2_entity && ["gt", "lt", "eq", "ne"].includes(d.cond2_op),
+  cond_level: (d) => d.cond_mode === "half_close",
+  lamp_brightness: (d) => !!d.lamp_entity,
+  garage_switch_entity: (d) => d.device_type === "garage",
+  garage_open_entity: (d) => !!d.garage_open_mode && d.garage_open_mode !== "off",
+  garage_open_op: (d) => !!d.garage_open_mode && d.garage_open_mode !== "off" && !!d.garage_open_entity,
+  garage_open_value: (d) => !!d.garage_open_mode && d.garage_open_mode !== "off" && !!d.garage_open_entity && ["gt", "lt", "eq", "ne"].includes(d.garage_open_op),
+  garage_close_entity: (d) => !!d.garage_close_mode && d.garage_close_mode !== "off",
+  garage_close_op: (d) => !!d.garage_close_mode && d.garage_close_mode !== "off" && !!d.garage_close_entity,
+  garage_close_value: (d) => !!d.garage_close_mode && d.garage_close_mode !== "off" && !!d.garage_close_entity && ["gt", "lt", "eq", "ne"].includes(d.garage_close_op),
+  garage_light_minutes: (d) => !!d.garage_light_entity,
+  garage_light_off_on_close: (d) => !!d.garage_light_entity,
+  garage_light_close_delay: (d) => !!d.garage_light_entity && !!d.garage_light_off_on_close,
+  close1_from: (d) => !!d.close1_entity,
+  close2_level: (d) => !!d.close2_enabled,
+  close2_tilt: (d) => !!d.close2_enabled,
+  close2_lux: (d) => !!d.close2_enabled,
+  close2_lux_entity: (d) => !!d.close2_enabled && Number(d.close2_lux) > 0,
+  close2_lux_minutes: (d) => !!d.close2_enabled && Number(d.close2_lux) > 0,
+  close2_entity: (d) => !!d.close2_enabled,
+  close2_from: (d) => !!d.close2_enabled,
+  emergency_level: (d) => !!d.emergency_entity,
+  brightness_open_from: (d) => !!d.brightness_entity,
+  brightness_close_from: (d) => !!d.brightness_entity,
+  random_only_vacation: (d) => Number(d.random_offset) > 0,
   xmas_level: (d) => !!d.xmas,
   intermediate_level: (d) => !!d.intermediate,
   brightness_close: (d) => !!d.brightness_entity,
@@ -1179,5 +1552,180 @@ const DEPENDS = {
   brightness_delay: (d) => !!d.brightness_entity,
   ...Object.fromEntries(["fire", "rain", "wind1", "wind2", "frost"].map((a) => [`alarm_${a}_level`, (d) => !!d[`alarm_${a}_entity`]])),
 };
+
+
+
+
+/* ================================================================== control view
+ * Every cover in Home Assistant – shutters, awnings, garage doors and gates – in one place,
+ * also the ones Shutter Captain does not automate.
+ */
+
+Object.assign(T.de, {
+  control: "Steuern",
+  c_all: "Alle", c_groups: "Gruppen", c_shutters: "Rollläden & Jalousien", c_awnings: "Markisen", c_garage: "Garagentore & Tore",
+  c_search: "Suchen …", c_none: "Keine passenden Geräte.",
+  c_confirm_open: "„{name}“ wirklich öffnen?", c_confirm_close: "„{name}“ wirklich schließen?",
+  c_managed: "Automatik",
+  t_all: "Alle", other_devices: "ohne Automatik",
+  edit_awnings: "Markisen bearbeiten", edit_garages: "Garagentore bearbeiten",
+  add_awning: "Markise hinzufügen", add_garage: "Garagentor hinzufügen",
+  st_extended: "Ausgefahren", st_retracted: "Eingefahren", st_open: "Offen", st_closed: "Geschlossen",
+  sg_appearance: "Darstellung", sg_shutters: "Rollläden", sg_awnings: "Markisen", sg_garages: "Garagentore",
+  confirm_close_locked: "Tür/Fenster offen (Aussperrschutz) bei: {names}. Trotzdem herunterfahren?",
+  emergency_active: "Notfall aktiv – alle Rollläden in Notfallposition",
+});
+Object.assign(T.en, {
+  control: "Control",
+  c_all: "All", c_groups: "Groups", c_shutters: "Shutters & blinds", c_awnings: "Awnings", c_garage: "Garage doors & gates",
+  c_search: "Search …", c_none: "No matching devices.",
+  c_confirm_open: "Really open “{name}”?", c_confirm_close: "Really close “{name}”?",
+  c_managed: "Automatic",
+  t_all: "All", other_devices: "without automation",
+  edit_awnings: "Edit awnings", edit_garages: "Edit garage doors",
+  add_awning: "Add awning", add_garage: "Add garage door",
+  st_extended: "Extended", st_retracted: "Retracted", st_open: "Open", st_closed: "Closed",
+  sg_appearance: "Appearance", sg_shutters: "Shutters", sg_awnings: "Awnings", sg_garages: "Garage doors",
+  confirm_close_locked: "Door/window open (lockout) at: {names}. Close anyway?",
+  emergency_active: "Emergency active – all shutters in emergency position",
+});
+
+const COVER_GROUPS = [
+  ["groups", "mdi:window-shutter-cog"],
+  ["shutters", "mdi:window-shutter"],
+  ["awnings", "mdi:awning-outline"],
+  ["garage", "mdi:garage"],
+];
+
+const CONTROL_CSS = `
+.ctl-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 14px; }
+.ctl-head h2 { margin: 0; font-size: 22px; flex: 1; min-width: 160px; }
+.ctl-sec { margin: 18px 0 10px; display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; --mdc-icon-size: 20px; }
+.ctl-sec small { color: var(--sp-muted); font-weight: 400; }
+.ctl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.ctl { padding: 14px; display: grid; grid-template-columns: 44px 1fr; gap: 10px 12px; align-items: center; position: relative; overflow: hidden; }
+.ctl::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--c, var(--sp-line)); }
+.ctl .ico { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; --mdc-icon-size: 26px;
+  background: color-mix(in srgb, var(--c, var(--sp-accent)) 14%, transparent); color: var(--c, var(--sp-accent)); }
+.ctl .nm { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ctl .st { font-size: 12px; color: var(--sp-muted); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.ctl .tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; padding: 1px 6px; border-radius: 6px;
+  background: color-mix(in srgb, var(--sp-accent) 14%, transparent); color: var(--sp-accent); }
+.ctl .acts { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; }
+.ctl .acts input[type=range] { flex: 1; min-width: 60px; accent-color: var(--c, var(--sp-accent)); }
+.ctl .acts .btn[disabled] { opacity: .4; cursor: default; }
+`;
+
+Object.assign(ShutterCaptainPanel.prototype, {
+  /** Lockout: ask before a shutter goes down in front of an open door/window. */
+  _okToClose(coverId) {
+    const members = this._hass.states[coverId]?.attributes?.entity_id;
+    const ids = Array.isArray(members) ? members : [coverId];
+    const locked = this._shutterStates().filter((s) => ids.includes(s.attributes.cover_entity) && s.attributes.closing_locked);
+    if (!locked.length) return true;
+    return confirm(this.t("confirm_close_locked").replace("{names}", locked.map((s) => s.attributes.name).join(", ")));
+  },
+
+  _coverCategory(id) {
+    const ent = this._hass.entities?.[id];
+    if (ent?.platform === DOMAIN) return "groups";
+    const dc = this._hass.states[id]?.attributes?.device_class;
+    if (dc === "awning") return "awnings";
+    if (["garage", "gate", "door"].includes(dc)) return "garage";
+    return "shutters";
+  },
+
+  _renderControl() {
+    const main = this.shadowRoot.getElementById("main");
+    if (!main || !this._hass) return;
+    if (!this.shadowRoot.getElementById("control-css")) {
+      const st = document.createElement("style");
+      st.id = "control-css";
+      st.textContent = CONTROL_CSS;
+      this.shadowRoot.appendChild(st);
+    }
+    this._ctlFilter = this._ctlFilter || "all";
+    const q = (this._ctlSearch || "").toLowerCase();
+    const managed = new Set(this._shutterStates().map((s) => s.attributes.cover_entity));
+    const covers = Object.keys(this._hass.states)
+      .filter((id) => id.startsWith("cover."))
+      .filter((id) => !q || id.includes(q) || this._friendly(id).toLowerCase().includes(q))
+      .sort((a, b) => this._friendly(a).localeCompare(this._friendly(b)));
+    const byCat = Object.fromEntries(COVER_GROUPS.map(([k]) => [k, []]));
+    covers.forEach((id) => byCat[this._coverCategory(id)].push(id));
+
+    const keepSearch = main.querySelector("#ctlsearch");
+    const pos = keepSearch ? keepSearch.selectionStart : null;
+    main.innerHTML = `
+      <div class="ctl-head"><h2>${esc(this.t("control"))}</h2>
+        <div class="segment">${[["all", "c_all"], ...COVER_GROUPS.map(([k]) => [k, `c_${k}`])].map(([k, l]) =>
+          `<button data-cf="${k}" class="${this._ctlFilter === k ? "active" : ""}">${esc(this.t(l))}</button>`).join("")}</div>
+        <div class="input searchbox"><ha-icon icon="mdi:magnify"></ha-icon><input id="ctlsearch" placeholder="${esc(this.t("c_search"))}" value="${esc(this._ctlSearch || "")}"></div>
+      </div>
+      ${COVER_GROUPS.filter(([k]) => this._ctlFilter === "all" || this._ctlFilter === k).map(([k, icon]) => byCat[k].length ? `
+        <div class="ctl-sec"><ha-icon icon="${icon}"></ha-icon>${esc(this.t(`c_${k}`))}<small>${byCat[k].length}</small></div>
+        <div class="ctl-grid">${byCat[k].map((id) => this._controlTile(id, k, managed.has(id))).join("")}</div>` : "").join("")
+        || `<div class="card empty"><p>${esc(this.t("c_none"))}</p></div>`}`;
+
+    main.querySelectorAll("[data-cf]").forEach((b) => b.addEventListener("click", () => { this._ctlFilter = b.dataset.cf; this._renderControl(); }));
+    const search = main.querySelector("#ctlsearch");
+    search.addEventListener("input", () => { this._ctlSearch = search.value; this._renderControl(); });
+    if (pos !== null && document.activeElement === this) { search.focus(); search.setSelectionRange(pos, pos); }
+    main.querySelectorAll("[data-cact]").forEach((b) => b.addEventListener("click", () => this._controlAction(b.dataset.id, b.dataset.cact)));
+    main.querySelectorAll("input[data-cpos]").forEach((r) => {
+      r.addEventListener("pointerdown", () => { this._dragging = true; });
+      r.addEventListener("change", () => {
+        this._dragging = false;
+        const now = Number(this._hass.states[r.dataset.cpos]?.attributes?.current_position ?? 100);
+        if (Number(r.value) < now && !this._okToClose(r.dataset.cpos)) { r.value = now; return; }
+        this._hass.callService("cover", "set_cover_position", { entity_id: r.dataset.cpos, position: Number(r.value) });
+      });
+    });
+  },
+
+  _controlTile(id, cat, managed) {
+    const st = this._hass.states[id];
+    const a = st.attributes;
+    const features = Number(a.supported_features || 0);
+    const pos = typeof a.current_position === "number" ? a.current_position : null;
+    const avail = st.state !== "unavailable";
+    const open = ["open", "opening"].includes(st.state);
+    const colors = { groups: "var(--sp-accent)", shutters: open ? "#f2a900" : "#5c6bc0", awnings: open ? "#ff8f00" : "#78909c", garage: open ? "#e53935" : "#43a047" };
+    const icons = {
+      groups: "mdi:window-shutter-cog",
+      shutters: open ? "mdi:window-shutter-open" : "mdi:window-shutter",
+      awnings: open ? "mdi:awning" : "mdi:awning-outline",
+      garage: a.device_class === "gate" ? (open ? "mdi:gate-open" : "mdi:gate") : (open ? "mdi:garage-open-variant" : "mdi:garage-variant"),
+    };
+    const label = this._hass.formatEntityState ? this._hass.formatEntityState(st) : st.state;
+    const dis = avail ? "" : "disabled";
+    return `<div class="card ctl" style="--c:${avail ? colors[cat] : "var(--sp-line)"}">
+      <div class="ico"><ha-icon icon="${a.icon || icons[cat]}"></ha-icon></div>
+      <div style="min-width:0"><div class="nm">${esc(this._friendly(id))}</div>
+        <div class="st">${esc(label)}${pos !== null ? ` · ${pos}%` : ""}${managed ? `<span class="tag">${esc(this.t("c_managed"))}</span>` : ""}</div></div>
+      <div class="acts">
+        ${features & 1 ? `<button class="btn icon" data-cact="open_cover" data-id="${esc(id)}" ${dis}><ha-icon icon="mdi:arrow-up"></ha-icon></button>` : ""}
+        ${features & 8 ? `<button class="btn icon" data-cact="stop_cover" data-id="${esc(id)}" ${dis}><ha-icon icon="mdi:stop"></ha-icon></button>` : ""}
+        ${features & 2 ? `<button class="btn icon" data-cact="close_cover" data-id="${esc(id)}" ${dis}><ha-icon icon="mdi:arrow-down"></ha-icon></button>` : ""}
+        ${features & 4 && pos !== null ? `<input type="range" min="0" max="100" step="1" value="${pos}" data-cpos="${esc(id)}" ${dis}>` : ""}
+      </div></div>`;
+  },
+
+  _controlAction(id, service) {
+    const cat = this._coverCategory(id);
+    if (service === "close_cover") {
+      if (!this._okToClose(id)) return;
+      // Confirmed for a group: move the members directly (the group itself skips locked ones).
+      const members = this._hass.states[id]?.attributes?.entity_id;
+      if (Array.isArray(members)) { this._hass.callService("cover", "close_cover", { entity_id: members }); return; }
+    }
+    // Garage doors and gates: ask first – they can hurt people and lock you out.
+    if (cat === "garage" && service !== "stop_cover") {
+      const key = service === "open_cover" ? "c_confirm_open" : "c_confirm_close";
+      if (!confirm(this.t(key).replace("{name}", this._friendly(id)))) return;
+    }
+    this._hass.callService("cover", service, { entity_id: id });
+  },
+});
 
 if (!customElements.get("shutter-captain-panel")) customElements.define("shutter-captain-panel", ShutterCaptainPanel);

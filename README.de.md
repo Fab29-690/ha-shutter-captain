@@ -27,6 +27,24 @@ Inspiriert vom ioBroker-Adapter *shuttercontrol*, nativ für Home Assistant neu 
 - **Handbetrieb-Erkennung** mit Rundung auf bekannte Höhen; endet beim nächsten Zeitereignis,
   nach einer Dauer oder erst bei „Fortsetzen“.
 
+### Neu in 2.6
+
+- **Notfall-Eingang** (z. B. Rauchmelder): höchste Priorität, alle Rollläden auf Notfallposition, Markisen fahren ein.
+- **Schließstufen**: Stufe 1 auch per Entität (z. B. Licht an), Stufe 2 für die Nacht mit eigener Höhe,
+  Lamellenwinkel, Lux-Schwelle und Uhrzeit.
+- **Zeitfenster für die Helligkeitssteuerung** (öffnet ab / schließt ab).
+- **Reiter „Steuern“**: alle Rollläden, Markisen, Garagentore und Tore aus Home Assistant an einem Ort.
+
+### Neu in 2.5
+
+- **Mindestabstand zwischen allen Fahrbefehlen** – schont den Duty-Cycle von Homematic IP.
+- **Sonnenschutz erst nach X Minuten** anhaltender Sonne, **Wettervorhersage** (Höchsttemperatur) und
+  **Wetterlage** als Bedingung, **Monate** für den Sonnenschutz.
+- **Hauptschalter** „Automatik (gesamt)“, **Anwesenheitssimulation** (zufällige Zeiten), **Lichtaktion**
+  beim Schließen, **Lüften-Knopf**, **Lamellenwinkel** für Offen/Geschlossen, **Markisen-Modus**.
+- **Eigene Bedingungen** (z. B. „abends nur halb schließen, wenn es heiß ist und jemand zu Hause ist“).
+- Ereignis `shutter_captain_cover_moved` bei jeder automatischen Fahrt.
+
 ### Verbesserungen gegenüber ioBroker
 
 - **Seitenleisten-Panel** mit Live-Ansicht: animierter Rollladen, Status, **Begründung**
@@ -73,6 +91,30 @@ Google und Assist unter diesem Namen finden): **Wohnbereich**, **Schlafbereich**
 mittlere Position und fahren alle Mitglieder gemeinsam (auf, zu, stopp, Position, Lamellen).
 Wird eine Gruppe auf eine konfigurierte Höhe gefahren (z. B. ganz auf/zu), bleibt die Automatik aktiv;
 bei anderen Positionen gehen die Rollläden in den Handbetrieb.
+
+## Dashboard-Karte
+
+Die Karte wird automatisch geladen – keine Ressource nötig. *Dashboard bearbeiten → Karte hinzufügen →
+Shutter Captain*. Im Editor wählst du die Rollläden und Gruppen (oder „Alle Rollläden“), ordnest sie per
+Maus an und stellst das Aussehen ein: Darstellung (Raster, Liste, Kompakt), Form, Akzent-, Hintergrund-
+und Schriftfarbe, Schriftart, Hintergrundbild (hochladen oder Adresse, mit Abdunkeln), Status-Chips und
+die Schalter Urlaub / Automatik / Manuell. Die Karte passt sich ihrer Breite an – vom Handy bis zum
+großen Bildschirm.
+
+![Karten-Editor](docs/images/card-editor.png)
+
+![Karte](docs/images/card.png)
+
+Unter *Einstellungen → Darstellung* wählst du die Akzentfarbe und eine Wetter-Entität – dann zeigen
+Fenster in Panel und Karte Tageszeit, Wolken, Regen oder Schnee. Darstellung *Kompakt* zeigt jeden
+Rollladen als kleinen Chip (antippen öffnet die Steuerung).
+
+### Zwei Karten
+
+- **Shutter Captain** – die ganze Übersicht (startet mit allen Rollläden), ideal als volle Karte.
+- **Shutter Captain – Rollladen** – ein einzelner Rollladen oder eine Gruppe, passend für Abschnitte.
+
+Wird ein Rollladen von Hand heruntergefahren, während seine Tür offen ist (Aussperrschutz), fragt die Karte vorher nach.
 
 ## Dienste
 

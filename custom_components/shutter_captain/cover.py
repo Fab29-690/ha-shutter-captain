@@ -164,10 +164,10 @@ class ShutterGroupCover(CoverEntity):
             for s in self._states()
             if not feature or int(s.attributes.get("supported_features", 0)) & feature
         ]
-        if targets:
-            await self.hass.services.async_call(
-                "cover", service, {ATTR_ENTITY_ID: targets, **(data or {})}, blocking=True
-            )
+        # One command per shutter through the hub queue keeps the minimum gap between
+        # radio commands (Homematic IP duty cycle) instead of firing all at once.
+        for entity_id in targets:
+            await self.hub.async_cover_call(service, {ATTR_ENTITY_ID: entity_id, **(data or {})})
 
     async def async_open_cover(self, **kwargs: Any) -> None:
         """Open all."""

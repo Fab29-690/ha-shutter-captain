@@ -148,3 +148,52 @@ def test_alarm_priority():
     # on release: highest priority of the rest
     assert logic.next_alarm("wind1", {"rain", "wind2"}, "wind1", False, prio) == "rain"
     assert logic.next_alarm("wind2", set(), "wind2", False, prio) is None
+
+
+def test_restore_after_window_close():
+    # "Open" only: up when the door opens, stay up when it closes
+    assert not logic.restore_after_window_close("open", False, "off")
+    assert not logic.restore_after_window_close("open", False, "open")
+    # catch-up needs a lockout that let something wait
+    assert logic.restore_after_window_close("open", True, "open")
+    assert not logic.restore_after_window_close("open", True, "off")
+    # close / open_close always return to the automation position
+    assert logic.restore_after_window_close("close", False, "off")
+    assert logic.restore_after_window_close("open_close", False, "off")
+    assert not logic.restore_after_window_close("off", False, "open_close")
+
+
+def test_condition_met():
+    assert logic.condition_met("on", "on")
+    assert logic.condition_met("home", "on")
+    assert not logic.condition_met("off", "on")
+    assert logic.condition_met("not_home", "off")
+    assert logic.condition_met("24.5", "gt", "24")
+    assert not logic.condition_met("23", "gt", "24")
+    assert logic.condition_met("19,5", "lt", "20")
+    assert logic.condition_met("sunny", "eq", "Sunny ")
+    assert logic.condition_met("cloudy", "ne", "sunny")
+    assert not logic.condition_met("unavailable", "off")
+    assert not logic.condition_met(None, "on")
+
+
+def test_conditions_combined():
+    assert logic.conditions_met([True, True], "and")
+    assert not logic.conditions_met([True, False], "and")
+    assert logic.conditions_met([True, False], "or")
+    assert not logic.conditions_met([], "and")
+
+
+def test_month_range_wraps():
+    assert logic.month_in_range(7, 5, 9)
+    assert not logic.month_in_range(3, 5, 9)
+    assert logic.month_in_range(12, 10, 3)
+    assert logic.month_in_range(2, 10, 3)
+    assert not logic.month_in_range(6, 10, 3)
+
+
+def test_random_offset_is_stable_and_bounded():
+    a = logic.random_offset_minutes("2026-11-25|cover.kitchen", 20)
+    assert a == logic.random_offset_minutes("2026-11-25|cover.kitchen", 20)
+    assert -20 <= a <= 20
+    assert logic.random_offset_minutes("x", 0) == 0

@@ -29,7 +29,8 @@ async def async_setup_entry(
         buttons.extend(GroupButton(hub, action, area) for action in ACTION_ICONS)
     async_add_entities(buttons)
     for subentry_id, ctrl in hub.shutters.items():
-        async_add_entities([ResumeButton(ctrl)], config_subentry_id=subentry_id)
+        buttons = [ResumeButton(ctrl), VentButton(ctrl)]
+        async_add_entities(buttons, config_subentry_id=subentry_id)
 
 
 class GroupButton(HubEntity, ButtonEntity):
@@ -57,3 +58,16 @@ class ResumeButton(ShutterEntity, ButtonEntity):
     async def async_press(self) -> None:
         """Resume."""
         await self.ctrl.async_resume()
+
+
+class VentButton(ShutterEntity, ButtonEntity):
+    """Airing: move to the vent position (held until the next scheduled event)."""
+
+    _attr_icon = "mdi:weather-windy"
+
+    def __init__(self, ctrl) -> None:
+        super().__init__(ctrl, "vent")
+
+    async def async_press(self) -> None:
+        """Vent."""
+        await self.ctrl.async_vent()
