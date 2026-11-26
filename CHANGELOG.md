@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.1.1
+
+- README: animated preview and a 65-second explainer video; new screenshots.
+- README: the "Coming from Shutter Pilot 1.x?" note now says it only concerns the earlier custom
+  repository of this project, not the unrelated *Shutter Pilot* integration in the default catalog.
+
 ## 3.1.0
 
 - **Garage doors: emergency opener** (e.g. one or more smoke detectors, optionally also the fire

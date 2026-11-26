@@ -7,7 +7,11 @@ eigenen Panel in der Seitenleiste einstellbar.
 
 Inspiriert vom ioBroker-Adapter *shuttercontrol*, nativ für Home Assistant neu gebaut.
 
-![Übersicht](docs/images/overview.png)
+[![Shutter Captain in Aktion](https://raw.githubusercontent.com/Fab29-690/ha-shutter-captain/main/docs/video/teaser.gif)](https://github.com/Fab29-690/ha-shutter-captain/blob/main/docs/video/shutter-captain.mp4)
+
+▶️ **[Erklärvideo ansehen (65 Sekunden)](https://github.com/Fab29-690/ha-shutter-captain/blob/main/docs/video/shutter-captain.mp4)**
+
+![Übersicht](https://raw.githubusercontent.com/Fab29-690/ha-shutter-captain/main/docs/images/overview.png)
 
 ## Funktionen
 
@@ -70,8 +74,13 @@ Falls Shutter Captain in der HACS-Suche noch nicht auftaucht, als benutzerdefini
 HACS → ⋮ → *Benutzerdefinierte Repositories* → `https://github.com/Fab29-690/ha-shutter-captain`
 (Typ *Integration*), danach weiter mit Schritt 1.
 
-> **Umstieg von Shutter Pilot 1.x?** Die Integration wurde umbenannt (neue Domain `shutter_captain`).
-> *Shutter Pilot* in HACS und unter *Geräte & Dienste* entfernen, Shutter Captain installieren und neu einrichten.
+> **Umstieg von Shutter Pilot 1.x?** Das betrifft nur, wer die frühere Version *dieses* Projekts als
+> benutzerdefiniertes Repository installiert hat (`Fab29-690/ha-shutter-pilot`, Domain `shutter_pilot`).
+> Mit der gleichnamigen, davon unabhängigen Integration *Shutter Pilot* von fschubi aus dem HACS-Store hat
+> das nichts zu tun – wer diese nutzt, lässt sie einfach installiert.
+> Die Integration wurde umbenannt (neue Domain `shutter_captain`): das alte benutzerdefinierte Repository
+> *Shutter Pilot* in HACS und den Eintrag unter *Geräte & Dienste* entfernen, Shutter Captain installieren
+> und neu einrichten.
 
 **Manuell:** `custom_components/shutter_captain` nach `config/custom_components` kopieren und neu starten.
 
@@ -101,9 +110,9 @@ und Schriftfarbe, Schriftart, Hintergrundbild (hochladen oder Adresse, mit Abdun
 die Schalter Urlaub / Automatik / Manuell. Die Karte passt sich ihrer Breite an – vom Handy bis zum
 großen Bildschirm.
 
-![Karten-Editor](docs/images/card-editor.png)
+![Karten-Editor](https://raw.githubusercontent.com/Fab29-690/ha-shutter-captain/main/docs/images/card-editor.png)
 
-![Karte](docs/images/card.png)
+![Karte](https://raw.githubusercontent.com/Fab29-690/ha-shutter-captain/main/docs/images/card.png)
 
 Unter *Einstellungen → Darstellung* wählst du die Akzentfarbe und eine Wetter-Entität – dann zeigen
 Fenster in Panel und Karte Tageszeit, Wolken, Regen oder Schnee. Darstellung *Kompakt* zeigt jeden

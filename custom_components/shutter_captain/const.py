@@ -7,7 +7,7 @@ from typing import Any
 
 DOMAIN = "shutter_captain"
 NAME = "Shutter Captain"
-VERSION = "3.1.0"
+VERSION = "3.1.1"
 
 SUBENTRY_SHUTTER = "shutter"
 

@@ -1,6 +1,6 @@
 # Shutter Captain
 
-[![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://hacs.xyz)
+[![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://hacs.xyz)
 [![Validate](https://github.com/Fab29-690/ha-shutter-captain/actions/workflows/validate.yml/badge.svg)](https://github.com/Fab29-690/ha-shutter-captain/actions/workflows/validate.yml)
 
 **Automatic shutter, blind and awning control for Home Assistant** – time profiles, sunrise/sunset,
@@ -12,7 +12,11 @@ Inspired by the excellent ioBroker adapter *shuttercontrol*, rebuilt natively fo
 
 🇩🇪 [Deutsche Anleitung](README.de.md)
 
-![Overview](docs/images/overview.png)
+[![Shutter Captain in action](https://raw.githubusercontent.com/Fab29-690/ha-shutter-captain/main/docs/video/teaser.gif)](https://github.com/Fab29-690/ha-shutter-captain/blob/main/docs/video/shutter-captain.mp4)
+
+▶️ **[Watch the explainer video (65 s, German captions)](https://github.com/Fab29-690/ha-shutter-captain/blob/main/docs/video/shutter-captain.mp4)**
+
+![Overview](https://raw.githubusercontent.com/Fab29-690/ha-shutter-captain/main/docs/images/overview.png)
 
 ## Features
 
@@ -53,8 +57,12 @@ If Shutter Captain does not show up in the HACS search yet, add it as a custom r
 HACS → ⋮ → *Custom repositories* → `https://github.com/Fab29-690/ha-shutter-captain`, type *Integration*,
 then continue with step 1.
 
-> **Coming from Shutter Pilot 1.x?** The integration was renamed (new domain `shutter_captain`).
-> Remove *Shutter Pilot* in HACS and under *Devices & services*, install Shutter Captain and set it up again.
+> **Coming from Shutter Pilot 1.x?** This only applies if you installed the earlier version of *this*
+> project as a custom repository (`Fab29-690/ha-shutter-pilot`, domain `shutter_pilot`). It has nothing
+> to do with the unrelated *Shutter Pilot* integration by fschubi in the default catalog – if you use
+> that one, leave it alone.
+> The integration was renamed (new domain `shutter_captain`): remove the old *Shutter Pilot* custom
+> repository in HACS and its entry under *Devices & services*, install Shutter Captain and set it up again.
 
 ### Manual
 
@@ -71,7 +79,7 @@ Everything can also be done in *Settings → Devices & services → Shutter Capt
 
 > **Positions** follow Home Assistant: `100 %` = fully open, `0 %` = closed.
 
-![Editor](docs/images/editor.png)
+![Editor](https://raw.githubusercontent.com/Fab29-690/ha-shutter-captain/main/docs/images/editor.png)
 
 ## Dashboard card
 
@@ -81,9 +89,9 @@ look: layout (grid, list, compact), shape, accent/background/text colour, font, 
 (upload or URL, with darkening), status chips and the vacation / automatic / manual buttons. The card
 adapts to its width – from phone to large screen.
 
-![Card editor](docs/images/card-editor.png)
+![Card editor](https://raw.githubusercontent.com/Fab29-690/ha-shutter-captain/main/docs/images/card-editor.png)
 
-![Card](docs/images/card.png)
+![Card](https://raw.githubusercontent.com/Fab29-690/ha-shutter-captain/main/docs/images/card.png)
 
 Under *Settings → Appearance* pick the accent colour and a weather entity – windows in panel and
 card then show the time of day, clouds, rain or snow. Layout *Compact* shows each shutter as a small
