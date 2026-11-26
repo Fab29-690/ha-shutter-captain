@@ -171,6 +171,18 @@ data: { entity_id: cover.living_room }
 Issues and ideas: [GitHub issues](https://github.com/Fab29-690/ha-shutter-captain/issues).
 Please attach the diagnostics download (*Devices & services → Shutter Captain → ⋮ → Download diagnostics*).
 
+## Support this project
+
+Shutter Captain is and will remain free. Every feature is fully available to everyone – no paid
+version, no locked functions, nothing you have to pay for.
+
+If it makes your home a little more comfortable and you'd like to say thanks, you can support its
+development with a completely voluntary donation:
+
+[![Donate with PayPal](https://img.shields.io/badge/PayPal-Support%20this%20project-00457C?logo=paypal&logoColor=white)](https://www.paypal.com/donate/?hosted_button_id=MJXKHUFM5M7ZQ)
+
+A ⭐ on GitHub, a bug report or an idea in the issues helps just as much. Thank you!
+
 ## License
 
 MIT
