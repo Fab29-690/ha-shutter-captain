@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.1.2
+
+- README: optional "Support this project" section with a PayPal link. Shutter Captain stays free –
+  all features remain fully available.
+
 ## 3.1.1
 
 - README: animated preview and a 65-second explainer video; new screenshots.

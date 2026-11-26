@@ -137,3 +137,15 @@ data: { entity_id: cover.wohnzimmer, minutes: 120 }
 action: shutter_captain.resume
 data: { entity_id: cover.wohnzimmer }
 ```
+
+## Projekt unterstützen
+
+Shutter Captain ist und bleibt kostenlos. Alle Funktionen stehen allen uneingeschränkt zur
+Verfügung – keine Bezahlversion, keine gesperrten Funktionen.
+
+Wenn dir die Integration den Alltag ein wenig angenehmer macht und du Danke sagen möchtest, kannst
+du die Weiterentwicklung mit einer völlig freiwilligen Spende unterstützen:
+
+[![Mit PayPal unterstützen](https://img.shields.io/badge/PayPal-Projekt%20unterst%C3%BCtzen-00457C?logo=paypal&logoColor=white)](https://www.paypal.com/donate/?hosted_button_id=MJXKHUFM5M7ZQ)
+
+Ein ⭐ auf GitHub, ein Fehlerbericht oder eine Idee in den Issues hilft genauso. Danke!
