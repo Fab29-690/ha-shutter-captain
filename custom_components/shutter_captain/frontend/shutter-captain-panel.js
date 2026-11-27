@@ -218,6 +218,14 @@ const REASONS = {
     blocked_alarm_rain: "Regenalarm blockiert",
     blocked_alarm_wind1: "Windalarm blockiert",
     blocked_alarm_wind2: "Windalarm blockiert",
+    open_stage1: "Öffnungsstufe 1 – teilweise geöffnet", open_stage2: "Öffnungsstufe 2 – ganz geöffnet",
+    frost_lock: "Frostsperre – keine automatische Fahrt", frost_lock_cleared: "Frostsperre beendet", blocked_frost_lock: "Frostsperre – Fahrt verhindert",
+    frost_cleared_open: "Frost vorbei – ganz geöffnet",
+    alarm_rain_frost_lock: "Regenalarm – wegen Frostsperre nicht gefahren", alarm_wind1_frost_lock: "Windalarm – wegen Frostsperre nicht gefahren", alarm_wind2_frost_lock: "Windalarm – wegen Frostsperre nicht gefahren",
+    insect: "Insektenschutz – kurz ganz hoch", insect_back: "Insektenschutz – zurück", insect_done: "Insektenschutz erledigt",
+    privacy_button: "Sichtschutz – bleibt bis zum nächsten Zeitereignis", my_button: "My-Position – bleibt bis zum nächsten Zeitereignis",
+    roof_rain: "Regen – Dachfenster geschlossen", roof_wind: "Wind – Dachfenster geschlossen", roof_auto_close: "Stand zu lange offen – geschlossen",
+    roof_close_time: "Abends geschlossen", roof_vent: "Lüften – Dachfenster auf Lüftungshöhe", roof_blocked_rain: "Regen – Öffnen nicht möglich", roof_blocked_wind: "Wind – Öffnen nicht möglich",
   },
   en: {
     start: "Started",
@@ -276,6 +284,14 @@ const REASONS = {
     blocked_alarm_rain: "Blocked by rain alarm",
     blocked_alarm_wind1: "Blocked by wind alarm",
     blocked_alarm_wind2: "Blocked by wind alarm",
+    open_stage1: "Opening stage 1 – partly open", open_stage2: "Opening stage 2 – fully open",
+    frost_lock: "Frost lock – no automatic moves", frost_lock_cleared: "Frost lock ended", blocked_frost_lock: "Frost lock – move prevented",
+    frost_cleared_open: "Frost over – fully opened",
+    alarm_rain_frost_lock: "Rain alarm – not moved because of the frost lock", alarm_wind1_frost_lock: "Wind alarm – not moved because of the frost lock", alarm_wind2_frost_lock: "Wind alarm – not moved because of the frost lock",
+    insect: "Insect protection – briefly fully up", insect_back: "Insect protection – back", insect_done: "Insect protection done",
+    privacy_button: "Privacy – held until the next scheduled event", my_button: "My position – held until the next scheduled event",
+    roof_rain: "Rain – roof window closed", roof_wind: "Wind – roof window closed", roof_auto_close: "Open too long – closed",
+    roof_close_time: "Closed in the evening", roof_vent: "Venting – roof window at vent position", roof_blocked_rain: "Rain – cannot open", roof_blocked_wind: "Wind – cannot open",
   },
 };
 
@@ -295,6 +311,11 @@ const STATE_STYLE = {
   wind1: { color: "#26a69a", icon: "mdi:weather-windy" },
   wind2: { color: "#00796b", icon: "mdi:weather-windy-variant" },
   frost: { color: "#29b6f6", icon: "mdi:snowflake-alert" },
+  frost_lock: { color: "#0277bd", icon: "mdi:snowflake-off" },
+  open_partly: { color: "#ffca28", icon: "mdi:window-shutter-settings" },
+  insect: { color: "#7cb342", icon: "mdi:bug-outline" },
+  privacy: { color: "#6d4c41", icon: "mdi:eye-off-outline" },
+  my_position: { color: "#ab47bc", icon: "mdi:star-outline" },
   none: { color: "#9e9e9e", icon: "mdi:window-shutter-auto" },
 };
 
@@ -487,6 +508,14 @@ button.chip.on { background: color-mix(in srgb, var(--sp-accent) 18%, transparen
 .win.t-garage { background: linear-gradient(180deg, #263238, #37474f) !important; }
 .win.t-garage .slats { background: repeating-linear-gradient(180deg, #eceff1 0 13px, #b0bec5 13px 15px); }
 .win.t-garage .stars, .win.t-garage .wx { display: none; }
+.win.t-roof { border-radius: 10px 10px 4px 4px; transform: perspective(240px) rotateX(12deg); }
+.win.t-roof .mullion { display: none; }
+.win.t-roof .slats { background: linear-gradient(180deg, rgba(187,222,251,.55), rgba(100,181,246,.38)); border-bottom: 4px solid #546e7a; backdrop-filter: blur(1px); }
+.win.t-roof .slats::after { display: none; }
+.hints { border-left: 4px solid #f59e0b; padding: 14px 18px; margin-bottom: 14px; }
+.hints ul { margin: 8px 0 0; padding-left: 22px; }
+.hints li { margin: 3px 0; }
+.hint-ico { color: #f59e0b; --mdc-icon-size: 18px; vertical-align: -3px; margin-left: 6px; }
 .toggles { grid-column: 1 / -1; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 .am { display: inline-flex; padding: 2px; border-radius: 999px; background: var(--sp-chip); margin-right: 4px; }
 .am button { border: 0; background: transparent; color: inherit; font: inherit; font-size: 12px; padding: 4px 11px; border-radius: 999px; cursor: pointer; }
@@ -496,6 +525,8 @@ button.chip.on { background: color-mix(in srgb, var(--sp-accent) 18%, transparen
 .menu-list { position: absolute; right: 0; top: 100%; z-index: 3; min-width: 200px; padding: 6px; display: none;
   background: var(--sp-card); border-radius: 12px; box-shadow: 0 8px 28px rgba(0,0,0,.2); }
 .menu.open .menu-list { display: block; }
+.shutter:has(.menu.open) { overflow: visible; z-index: 3; }
+.menu-list { max-height: 340px; overflow-y: auto; }
 .menu-list button { display: flex; width: 100%; gap: 8px; align-items: center; border: 0; background: transparent; color: inherit;
   font: inherit; font-size: 14px; padding: 9px 10px; border-radius: 8px; cursor: pointer; text-align: left; --mdc-icon-size: 18px; }
 .menu-list button:hover { background: var(--sp-chip); }
@@ -655,6 +686,7 @@ class ShutterCaptainPanel extends HTMLElement {
           <button class="tab" data-view="shutters"><ha-icon icon="mdi:window-shutter-cog"></ha-icon><span class="lbl">${esc(this.t("shutters"))}</span></button>
           <button class="tab" data-view="awnings"><ha-icon icon="mdi:awning-outline"></ha-icon><span class="lbl">${esc(this.t("edit_awnings"))}</span></button>
           <button class="tab" data-view="garages"><ha-icon icon="mdi:garage-variant"></ha-icon><span class="lbl">${esc(this.t("edit_garages"))}</span></button>
+          <button class="tab" data-view="roofs"><ha-icon icon="mdi:window-open-variant"></ha-icon><span class="lbl">${esc(this.t("edit_roofs"))}</span></button>
           <button class="tab" data-view="settings"><ha-icon icon="mdi:cog-outline"></ha-icon><span class="lbl">${esc(this.t("settings"))}</span></button>
         </nav>
         <label class="langsel" title="Sprache / Language"><ha-icon icon="mdi:translate"></ha-icon>
@@ -693,7 +725,7 @@ class ShutterCaptainPanel extends HTMLElement {
     main.innerHTML = "";
     this._sig = null;
     if (view === "overview") this._renderOverview();
-    else if (["shutters", "awnings", "garages"].includes(view)) { this._editType = { shutters: "shutter", awnings: "awning", garages: "garage" }[view]; this._renderShutterList(); }
+    else if (["shutters", "awnings", "garages", "roofs"].includes(view)) { this._editType = { shutters: "shutter", awnings: "awning", garages: "garage", roofs: "roof_window" }[view]; this._renderShutterList(); }
     else this._renderSettings();
   }
 
@@ -705,7 +737,7 @@ class ShutterCaptainPanel extends HTMLElement {
       this._configError = err;
     }
     if (this._view === "overview") { this._sig = null; this._renderOverview(); }
-    if (["shutters", "awnings", "garages"].includes(this._view) && !this._editing) this._renderShutterList();
+    if (["shutters", "awnings", "garages", "roofs"].includes(this._view) && !this._editing) this._renderShutterList();
     if (this._view === "settings" && !this._draftGlobal) this._renderSettings();
   }
 
@@ -748,7 +780,7 @@ class ShutterCaptainPanel extends HTMLElement {
   }
 
   _stateLabel(state, type = "shutter") {
-    const own = { awning: { sun_protect: "st_extended", down: "st_retracted", up: "st_retracted" }, garage: { up: "st_open", down: "st_closed" } }[type]?.[state];
+    const own = { awning: { sun_protect: "st_extended", down: "st_retracted", up: "st_retracted" }, garage: { up: "st_open", down: "st_closed" }, roof_window: { up: "st_open", down: "st_closed" } }[type]?.[state];
     if (own) return this.t(own);
     return this._config?.labels?.entity?.sensor?.status?.state?.[state] || state;
   }
@@ -802,7 +834,7 @@ class ShutterCaptainPanel extends HTMLElement {
     }).join("");
 
     // Awnings / garage doors: no areas, no shutter sun protection – their own Automatic | Manual card instead.
-    const dtype = { awnings: "awning", garages: "garage" }[this._type];
+    const dtype = { awnings: "awning", garages: "garage", roofs: "roof_window" }[this._type];
     let typeCard = "";
     if (dtype) {
       const devs = this._shutterStates().filter((s) => (s.attributes.device_type || "shutter") === dtype);
@@ -813,7 +845,7 @@ class ShutterCaptainPanel extends HTMLElement {
         return `<div class="area tm"><span>${esc(s.attributes.name)}</span><span class="t">${esc(this._stateLabel(s.state, dtype))}</span>
           <label class="switch" title="${esc(this.t("am_auto"))}"><input type="checkbox" data-toggle-input="${esc(id || "")}" ${s.attributes.manual ? "" : "checked"}><span></span></label></div>`;
       }).join("");
-      typeCard = `<div class="card"><div class="eyebrow">${esc(this.t("auto"))} · ${esc(this.t(dtype === "awning" ? "c_awnings" : "c_garage"))}</div>
+      typeCard = `<div class="card"><div class="eyebrow">${esc(this.t("auto"))} · ${esc(this.t({ awning: "c_awnings", garage: "c_garage", roof_window: "c_roofs" }[dtype]))}</div>
         <div class="segment tmode">${[["auto", "am_auto", allAuto], ["manual", "am_manual", allManual]].map(([k, l, on]) => `<button data-tmode="${k}" class="${on ? "active" : ""}">${esc(this.t(l))}</button>`).join("")}</div>
         <div class="areas">${rows || `<div class="entity-name">${esc(this.t("none_of_type"))}</div>`}</div></div>`;
     }
@@ -829,7 +861,7 @@ class ShutterCaptainPanel extends HTMLElement {
         <div class="chips">${flagChip("master", "mdi:power")}${flagChip("vacation", "mdi:beach")}${flagChip("school_holiday", "mdi:school-outline")}
           ${a.summer ? `<span class="chip"><ha-icon icon="mdi:white-balance-sunny"></ha-icon>${esc(this.t("summer"))}</span>` : ""}
           ${a.xmas ? `<span class="chip"><ha-icon icon="mdi:pine-tree"></ha-icon>${esc(this.t("xmas"))}</span>` : ""}</div></div>
-      ${dtype === "garage" ? "" : sunCard}
+      ${dtype === "garage" || dtype === "roof_window" ? "" : sunCard}
       ${dtype ? typeCard : `<div class="card"><div class="eyebrow">${esc(this.t("auto"))}</div><div class="areas">${areaRows}</div></div>`}`;
     hero.querySelectorAll("[data-tmode]").forEach((b) => b.addEventListener("click", () =>
       this._hass.callService(DOMAIN, "command", { action: b.dataset.tmode, device_type: dtype })));
@@ -844,10 +876,10 @@ class ShutterCaptainPanel extends HTMLElement {
   _renderActions() {
     const el = this.shadowRoot.getElementById("actions");
     this._type = this._type || "all";
-    const dtype = { awnings: "awning", garages: "garage" }[this._type];
+    const dtype = { awnings: "awning", garages: "garage", roofs: "roof_window" }[this._type];
     const lbl = (k) => this.t(dtype === "awning" ? { open: "aw_extend", close: "aw_retract" }[k] || k : k);
     el.innerHTML = `
-      <div class="segment typeseg">${[["all", "t_all", "mdi:view-grid-outline"], ["groups", "c_groups", "mdi:window-shutter-cog"], ["shutters", "c_shutters", "mdi:window-shutter"], ["awnings", "c_awnings", "mdi:awning-outline"], ["garages", "c_garage", "mdi:garage-variant"]]
+      <div class="segment typeseg">${[["all", "t_all", "mdi:view-grid-outline"], ["groups", "c_groups", "mdi:window-shutter-cog"], ["shutters", "c_shutters", "mdi:window-shutter"], ["awnings", "c_awnings", "mdi:awning-outline"], ["garages", "c_garage", "mdi:garage-variant"], ["roofs", "c_roofs", "mdi:window-open-variant"]]
         .map(([k, l, ic]) => `<button data-type="${k}" class="${this._type === k ? "active" : ""}"><ha-icon icon="${ic}"></ha-icon>${esc(this.t(l))}</button>`).join("")}</div>
       <div class="break"></div>
       ${dtype ? "" : `<div class="segment">${["all", ...AREAS].map((ar) => `<button data-area="${ar}" class="${this._area === ar ? "active" : ""}">${esc(this.t(ar))}</button>`).join("")}</div>`}
@@ -877,7 +909,7 @@ class ShutterCaptainPanel extends HTMLElement {
     const grid = this.shadowRoot.getElementById("grid");
     if (!grid) return;
     const type = this._type || "all";
-    const wantType = { shutters: "shutter", awnings: "awning", garages: "garage" }[type];
+    const wantType = { shutters: "shutter", awnings: "awning", garages: "garage", roofs: "roof_window" }[type];
     const shutters = this._shutterStates()
       .filter((s) => type === "all" || (wantType && (s.attributes.device_type || "shutter") === wantType))
       .filter((s) => (wantType && wantType !== "shutter") || this._area === "all" || s.attributes.area === this._area
@@ -922,8 +954,8 @@ class ShutterCaptainPanel extends HTMLElement {
     }
     const type = this._type || "all";
     const managed = new Set(this._shutterStates().map((s) => s.attributes.cover_entity));
-    const map = { groups: "groups", shutters: "shutters", awnings: "awnings", garages: "garage" };
-    const cats = type === "all" ? ["groups", "shutters", "awnings", "garage"] : [map[type]];
+    const map = { groups: "groups", shutters: "shutters", awnings: "awnings", garages: "garage", roofs: "roofs" };
+    const cats = type === "all" ? ["groups", "shutters", "awnings", "garage", "roofs"] : [map[type]];
     const ids = Object.keys(this._hass.states)
       .filter((id) => id.startsWith("cover.") && !managed.has(id))
       .sort((a, b) => this._friendly(a).localeCompare(this._friendly(b)));
@@ -962,6 +994,8 @@ class ShutterCaptainPanel extends HTMLElement {
               <button data-act="pause0"><ha-icon icon="mdi:pause-octagon-outline"></ha-icon>${esc(this.t("pause_inf"))}</button>
               <button data-act="sun"><ha-icon icon="mdi:weather-sunny"></ha-icon>${esc(this.t("sun_protect"))}</button>
               <button data-act="vent"><ha-icon icon="mdi:weather-windy"></ha-icon>${esc(this.t("vent"))}</button>
+              <button data-act="privacy"><ha-icon icon="mdi:eye-off-outline"></ha-icon>${esc(this.t("privacy"))}</button>
+              <button data-act="my"><ha-icon icon="mdi:star-outline"></ha-icon>${esc(this.t("my_position"))}</button>
               <button data-act="edit"><ha-icon icon="mdi:pencil-outline"></ha-icon>${esc(this.t("edit"))}</button>
             </div></div></div>
         <div class="reason"></div>
@@ -1016,9 +1050,23 @@ class ShutterCaptainPanel extends HTMLElement {
       }
       if (act === "sun") this._hass.callService("cover", "set_cover_position", { entity_id: cover, position: card._sunLevel });
       if (act === "vent") this._hass.callService(DOMAIN, "vent", { entity_id: cover });
-      if (act === "edit") { this._setView({ awning: "awnings", garage: "garages" }[card._dtype] || "shutters"); this._openEditor("edit", [card._subentry]); }
+      if (act === "privacy" || act === "my") this._positionAction(card._status, act === "privacy" ? "privacy" : "my_position");
+      if (act === "edit") { this._setView({ awning: "awnings", garage: "garages", roof_window: "roofs" }[card._dtype] || "shutters"); this._openEditor("edit", [card._subentry]); }
     });
     return card;
+  }
+
+  /** Privacy / My position: our service; in front of an open door only after confirmation. */
+  _positionAction(statusId, service) {
+    const a = this._hass.states[statusId]?.attributes || {};
+    const level = Number(service === "privacy" ? a.privacy_level : a.my_level);
+    const down = typeof a.position === "number" && level < a.position - 2;
+    let override = false;
+    if (down && a.closing_locked) {
+      if (!confirm(this.t("confirm_close_locked").replace("{names}", a.name))) return;
+      override = true;
+    }
+    this._hass.callService(DOMAIN, service, { entity_id: a.cover_entity, override_lockout: override });
   }
 
   _updateCard(card, s) {
@@ -1038,10 +1086,13 @@ class ShutterCaptainPanel extends HTMLElement {
     const isGarage = dtype === "garage";
     // Awnings: no schedule either – only their sun automation.
     const isAwning = dtype === "awning";
-    card.querySelectorAll("[data-auto]").forEach((b) => { b.hidden = isGarage || (isAwning && b.dataset.auto !== "auto_sun"); });
-    card.querySelector(".times").hidden = isGarage || isAwning;
-    card.querySelector(".compass").hidden = isGarage;
-    card.querySelector("[data-act=\"sun\"]")?.toggleAttribute("hidden", isGarage);
+    // Roof windows: rain/wind closing and venting only – no schedule, no sun.
+    const isRoof = dtype === "roof_window";
+    card.querySelectorAll("[data-auto]").forEach((b) => { b.hidden = isGarage || isRoof || (isAwning && b.dataset.auto !== "auto_sun"); });
+    card.querySelector(".times").hidden = isGarage || isAwning || isRoof;
+    card.querySelector(".compass").hidden = isGarage || isRoof;
+    card.querySelector("[data-act=\"sun\"]")?.toggleAttribute("hidden", isGarage || isRoof);
+    card.querySelectorAll("[data-act=\"privacy\"],[data-act=\"my\"]").forEach((b) => b.toggleAttribute("hidden", isGarage || isRoof));
     let label = this._stateLabel(state, dtype);
     if (a.manual_until) label += ` · ${this.t("until")} ${new Date(a.manual_until).toLocaleTimeString(this.locale, { hour: "2-digit", minute: "2-digit" })}`;
     card.querySelector(".status span").textContent = label;
@@ -1061,9 +1112,11 @@ class ShutterCaptainPanel extends HTMLElement {
     win.classList.toggle("sunny", state === "sun_protect" || state === "heat_protect" || !!a.sun_checks?.azimuth);
     win.classList.toggle("t-awning", dtype === "awning");
     win.classList.toggle("t-garage", dtype === "garage");
+    win.classList.toggle("t-roof", dtype === "roof_window");
     // Awning: the fabric grows with the position (extended = open). Shutter/garage: the curtain comes down.
     const cover = dtype === "awning" ? pos : (pos === null ? null : 100 - pos);
     card.querySelector(".slats").style.height = cover === null ? "0" : `calc(${cover}% - ${cover * 0.08}px)`;
+    if (isRoof && (state === "up" || state === "down")) card.querySelector(".status ha-icon").setAttribute("icon", state === "up" ? "mdi:window-open-variant" : "mdi:window-closed-variant");
     const typeIcon = { awning: "mdi:awning-outline", garage: "mdi:garage-variant" }[dtype];
     if (typeIcon && (state === "up" || state === "down" || state === "sun_protect")) card.querySelector(".status ha-icon").setAttribute("icon", dtype === "garage" ? (state === "up" ? "mdi:garage-open-variant" : "mdi:garage-variant") : (state === "sun_protect" ? "mdi:awning" : "mdi:awning-outline"));
     card.querySelector(".badge").textContent = pos === null ? "?" : `${pos}%`;
@@ -1132,17 +1185,17 @@ class ShutterCaptainPanel extends HTMLElement {
     const admin = cfg.is_admin;
     main.innerHTML = `
       ${admin ? "" : `<div class="notice">${esc(this.t("readonly"))}</div>`}
-      <div class="editor-head"><h2>${esc(this.t({ shutter: "shutters", awning: "edit_awnings", garage: "edit_garages" }[this._editType || "shutter"]))}</h2>
+      <div class="editor-head"><h2>${esc(this.t({ shutter: "shutters", awning: "edit_awnings", garage: "edit_garages", roof_window: "edit_roofs" }[this._editType || "shutter"]))}</h2>
         <div class="input searchbox"><ha-icon icon="mdi:magnify"></ha-icon><input id="search" placeholder="${esc(this.t("search"))}" value="${esc(this._search)}"></div>
         ${admin && this._selected.size > 1 ? `<button class="btn" id="bulk"><ha-icon icon="mdi:checkbox-multiple-marked-outline"></ha-icon>${esc(this.t("bulk_edit"))} (${this._selected.size})</button>` : ""}
-        ${admin ? `<button class="btn primary" id="add"><ha-icon icon="mdi:plus"></ha-icon>${esc(this.t({ shutter: "add", awning: "add_awning", garage: "add_garage" }[this._editType || "shutter"]))}</button>` : ""}</div>
+        ${admin ? `<button class="btn primary" id="add"><ha-icon icon="mdi:plus"></ha-icon>${esc(this.t({ shutter: "add", awning: "add_awning", garage: "add_garage", roof_window: "add_roof" }[this._editType || "shutter"]))}</button>` : ""}</div>
       ${cfg.shutters.length ? `<div class="card table-wrap"><table class="table"><thead><tr>
         <th style="width:40px"><input type="checkbox" id="selall" ${this._selected.size && this._selected.size === cfg.shutters.length ? "checked" : ""}></th>
         <th>${esc(this.t("col_name"))}</th><th>${esc(this.t("col_open"))}</th><th>${esc(this.t("col_close"))}</th>
         <th class="hide-sm">${esc(this.t("col_sun"))}</th><th class="hide-sm">${esc(this.t("col_window"))}</th><th style="width:96px"></th></tr></thead><tbody>
         ${rows.map((s) => `<tr data-id="${esc(s.subentry_id)}">
           <td><input type="checkbox" data-sel="${esc(s.subentry_id)}" ${this._selected.has(s.subentry_id) ? "checked" : ""}></td>
-          <td><b>${esc(s.title)}</b><span class="sub">${esc(s.data.cover_entity)}</span></td>
+          <td><b>${esc(s.title)}</b>${(() => { const h = shutterHints(s.data, cfg.options); return h.length ? `<ha-icon class="hint-ico" icon="mdi:alert-outline" title="${esc(h.map((k) => this.t(k)).join("\n"))}"></ha-icon>` : ""; })()}<span class="sub">${esc(s.data.cover_entity)}</span></td>
           <td>${esc(sel("up_mode", s.data.up_mode))}<span class="sub">${s.data.open_level}%</span></td>
           <td>${esc(sel("down_mode", s.data.down_mode))}<span class="sub">${s.data.close_level}%</span></td>
           <td class="hide-sm">${esc(sel("sun_mode", s.data.sun_mode))}${s.data.sun_mode !== "off" ? `<span class="sub">${s.data.azimuth}° ± ${s.data.azimuth_range}° · ${s.data.sun_level}%</span>` : ""}</td>
@@ -1197,7 +1250,7 @@ class ShutterCaptainPanel extends HTMLElement {
     const cfg = this._config;
     const find = (id) => cfg.shutters.find((s) => s.subentry_id === id);
     let data;
-    if (mode === "new") data = { ...cfg.shutter_defaults, device_type: this._editType || "shutter", ...(this._editType === "garage" ? { up_mode: "off", down_mode: "off" } : this._editType === "awning" ? { up_mode: "off", down_mode: "off", open_level: 100, close_level: 0, sun_level: 100, sun_mode: "azimuth" } : {}) };
+    if (mode === "new") data = { ...cfg.shutter_defaults, device_type: this._editType || "shutter", ...(this._editType === "garage" ? { up_mode: "off", down_mode: "off" } : this._editType === "awning" ? { up_mode: "off", down_mode: "off", open_level: 100, close_level: 0, sun_level: 100, sun_mode: "azimuth" } : this._editType === "roof_window" ? { up_mode: "off", down_mode: "off", open_level: 100, close_level: 0, area: "none" } : {}) };
     else if (mode === "duplicate") data = { ...find(ids[0]).data, name: "", cover_entity: null };
     else data = { ...find(ids[0]).data };
     this._editing = { mode, ids, data, original: { ...data }, changed: new Set() };
@@ -1210,13 +1263,14 @@ class ShutterCaptainPanel extends HTMLElement {
     const cfg = this._config;
     const titleMap = { new: this.t("add"), duplicate: this.t("duplicate"), bulk: `${this.t("bulk_edit")} (${ed.ids.length})` };
     const title = titleMap[ed.mode] || cfg.shutters.find((s) => s.subentry_id === ed.ids[0])?.title;
-    const icons = { main: "mdi:window-shutter", window: "mdi:window-open-variant", sun: "mdi:weather-sunny", conditions: "mdi:function-variant", stages: "mdi:stairs-down", extra: "mdi:tune-variant" };
+    const icons = { main: "mdi:window-shutter", window: "mdi:window-open-variant", sun: "mdi:weather-sunny", conditions: "mdi:function-variant", stages: "mdi:stairs", extra: "mdi:tune-variant", positions: "mdi:shield-star-outline" };
     const labels = cfg.labels?.config_subentries?.shutter?.step || {};
     const hidden = ed.mode === "bulk" ? new Set(["name", "cover_entity"]) : new Set();
     main.innerHTML = `
       <div class="editor-head"><button class="btn icon" id="back"><ha-icon icon="mdi:arrow-left"></ha-icon></button><h2>${esc(title)}</h2>
         ${ed.mode === "edit" ? `<button class="btn danger" id="del"><ha-icon icon="mdi:delete-outline"></ha-icon>${esc(this.t("delete"))}</button>` : ""}</div>
       ${ed.mode === "bulk" ? `<div class="notice">${esc(this.t("bulk_hint").replace("{n}", ed.ids.length))}</div>` : ""}
+      <div id="hints"></div>
       <div class="sections">${Object.entries(cfg.shutter_schema).map(([section, fields], i) => `
         <details class="card section" data-section="${section}" ${i < 2 || ed.mode !== "edit" ? "open" : ""}>
           <summary><span class="ico"><ha-icon icon="${icons[section]}"></ha-icon></span>${esc(labels[section]?.title || section)}<ha-icon class="chev" icon="mdi:chevron-down"></ha-icon></summary>
@@ -1265,10 +1319,11 @@ class ShutterCaptainPanel extends HTMLElement {
     const icons = {
       area_living: "mdi:sofa-outline", area_sleep: "mdi:bed-outline", area_children: "mdi:teddy-bear", astro: "mdi:weather-sunset",
       days: "mdi:calendar-star", seasons: "mdi:pine-tree", brightness: "mdi:brightness-6", special: "mdi:clock-star-four-points-outline",
-      alarms: "mdi:alarm-light-outline", behaviour: "mdi:hand-back-right-outline", appearance: "mdi:palette-outline", awnings: "mdi:awning-outline", garages: "mdi:garage-variant",
+      alarms: "mdi:alarm-light-outline", behaviour: "mdi:hand-back-right-outline", appearance: "mdi:palette-outline", awnings: "mdi:awning-outline", garages: "mdi:garage-variant", roof_windows: "mdi:window-open-variant",
     };
     main.innerHTML = `
       ${cfg.is_admin ? "" : `<div class="notice">${esc(this.t("readonly"))}</div>`}
+      <div id="hints"></div>
       <div class="editor-head"><h2>${esc(this.t("settings"))}</h2>
         <div class="segment">${Object.keys(SETTINGS_GROUPS).map((g) => `<button data-sg="${g}" class="${this._sg() === g ? "active" : ""}">${esc(this.t("sg_" + g))}</button>`).join("")}</div></div>
       <div class="sections">${SETTINGS_GROUPS[this._sg()].filter((section) => cfg.global_schema[section]).map((section, i) => [section, cfg.global_schema[section], i]).map(([section, fields, i]) => `
@@ -1417,6 +1472,17 @@ class ShutterCaptainPanel extends HTMLElement {
     }
     const hiddenSections = TYPE_HIDDEN_SECTIONS[data.device_type || "shutter"] || [];
     root.querySelectorAll("[data-section]").forEach((sec) => { sec.hidden = hiddenSections.includes(sec.dataset.section); });
+    this._renderHints(root, data);
+  }
+
+  /** Plausibility hints: settings that contradict each other or can never have an effect. */
+  _renderHints(root, data) {
+    const box = root.querySelector("#hints");
+    if (!box) return;
+    const list = this._editing ? shutterHints(data, this._config?.options || {}) : this._sg() === "shutters" ? globalHints(data) : [];
+    box.innerHTML = list.length
+      ? `<div class="card hints"><div class="eyebrow"><ha-icon icon="mdi:alert-outline"></ha-icon> ${esc(this.t("hints_title"))}</div><ul>${list.map((k) => `<li>${esc(this.t(k))}</li>`).join("")}</ul></div>`
+      : "";
   }
 
   /* ------------------------------------------------------------ save */
@@ -1469,13 +1535,52 @@ const SETTINGS_GROUPS = {
   shutters: ["area_living", "area_sleep", "area_children", "astro", "days", "brightness", "seasons", "special", "alarms", "behaviour"],
   awnings: ["awnings"],
   garages: ["garages"],
+  roof_windows: ["roof_windows"],
   appearance: ["appearance"],
 };
-const TYPE_HIDDEN_SECTIONS = { awning: ["window", "stages"], garage: ["window", "sun", "conditions", "stages", "extra"] };
-const TYPE_HIDDEN_FIELDS = {
-  awning: ["open_tilt", "close_tilt", "elevation", "keep_sun", "heat_protection", "heat_temp", "sun_tilt", "alarm_fire", "alarm_rain", "alarm_wind1", "alarm_wind2", "alarm_frost"],
-  garage: ["up_mode", "down_mode", "open_level", "close_level", "open_tilt", "close_tilt", "elevation"],
+const TYPE_HIDDEN_SECTIONS = {
+  awning: ["window", "stages"],
+  garage: ["window", "sun", "conditions", "stages", "extra", "positions"],
+  roof_window: ["window", "sun", "conditions", "stages", "extra", "positions"],
 };
+const TYPE_HIDDEN_FIELDS = {
+  awning: ["open_tilt", "close_tilt", "elevation", "keep_sun", "heat_protection", "heat_temp", "sun_tilt", "alarm_fire", "alarm_rain", "alarm_wind1", "alarm_wind2", "alarm_frost",
+    "frost_open_level", "frost_lock", "insect_enabled", "insect_from", "insect_to", "insect_temp_entity", "insect_min_temp", "insect_entity"],
+  garage: ["up_mode", "down_mode", "open_level", "close_level", "open_tilt", "close_tilt", "elevation"],
+  roof_window: ["up_mode", "down_mode", "area", "open_tilt", "close_tilt", "elevation"],
+};
+const LOCKOUT_OF_PROFILE = { terrace_door: "open", vent_window: "close", protect_only: "open" };
+const noTime = (v) => !v || String(v).startsWith("00:00");
+function shutterHints(d, o) {
+  const type = d.device_type || "shutter";
+  const out = [];
+  if (type === "roof_window") {
+    if (!o.roof_window_rain_entity) out.push("h_roof_no_rain");
+    return out;
+  }
+  if (type !== "shutter") return out;
+  const profile = d.window_profile || "custom";
+  const lockout = LOCKOUT_OF_PROFILE[profile] || d.lockout;
+  if (d.window_entity && profile === "custom" && ["close", "open_close"].includes(lockout)) out.push("h_lockout_close");
+  if (d.up_mode === "off" && ((d.sun_mode && d.sun_mode !== "off") || d.heat_protection)) out.push("h_sun_never");
+  if (d.up_mode !== "off" && d.down_mode !== "off" && Number(d.open_level) <= Number(d.close_level)) out.push("h_open_le_close");
+  if (d.close2_enabled && !(Number(d.close2_lux) > 0) && !d.close2_entity && noTime(d.close2_from)) out.push("h_stage2_none");
+  if (d.open2_enabled && !(Number(d.open2_lux) > 0) && !d.open2_entity && noTime(d.open2_from)) out.push("h_open2_none");
+  if (d.open2_enabled && d.up_mode === "off") out.push("h_open2_no_open");
+  if (Number(d.frost_open_level) >= 0 && !o.alarm_frost_entity && !(o.frost_temp_entity && Number(o.frost_protect_below) > -50)) out.push("h_frost_no_source");
+  if (d.frost_lock && !(o.frost_temp_entity && Number(o.frost_lock_below) > -50)) out.push("h_frost_lock_off");
+  if (d.alarm_frost && !o.alarm_frost_entity && !(o.frost_temp_entity && Number(o.frost_protect_below) > -50)) out.push("h_frost_alarm_off");
+  if (d.insect_enabled && d.up_mode !== "off" && Number(d.open_level) >= 97) out.push("h_insect_full_open");
+  return out;
+}
+function globalHints(o) {
+  const out = [];
+  if (o.brightness_entity && String(o.brightness_open_from || "04:00") >= String(o.brightness_close_from || "12:00")) out.push("h_lux_overlap");
+  if (Number(o.brightness_open) <= Number(o.brightness_close) && o.brightness_entity) out.push("h_lux_values");
+  if ((Number(o.frost_protect_below) > -50 || Number(o.frost_lock_below) > -50) && !o.frost_temp_entity) out.push("h_frost_temp_missing");
+  if (Number(o.frost_lock_below) > -50 && Number(o.frost_protect_below) > -50 && Number(o.frost_lock_below) > Number(o.frost_protect_below)) out.push("h_frost_order");
+  return out;
+}
 const sunOn = (d) => d.sun_mode && d.sun_mode !== "off";
 const sunHas = (t) => (d) => ({
   in_out_temp: ["in", "out"], azimuth: ["az"], all: ["in", "out", "az"], out_temp_azimuth: ["out", "az"], out_temp: ["out"], in_temp: ["in"],
@@ -1541,6 +1646,20 @@ const DEPENDS = {
   close2_lux_minutes: (d) => !!d.close2_enabled && Number(d.close2_lux) > 0,
   close2_entity: (d) => !!d.close2_enabled,
   close2_from: (d) => !!d.close2_enabled,
+  close2_logic: (d) => !!d.close2_enabled,
+  open1_level: (d) => !!d.open2_enabled,
+  open2_lux: (d) => !!d.open2_enabled,
+  open2_lux_entity: (d) => !!d.open2_enabled && Number(d.open2_lux) > 0,
+  open2_lux_minutes: (d) => !!d.open2_enabled && Number(d.open2_lux) > 0,
+  open2_entity: (d) => !!d.open2_enabled,
+  open2_from: (d) => !!d.open2_enabled,
+  open2_logic: (d) => !!d.open2_enabled,
+  insect_from: (d) => !!d.insect_enabled,
+  insect_to: (d) => !!d.insect_enabled,
+  insect_temp_entity: (d) => !!d.insect_enabled,
+  insect_min_temp: (d) => !!d.insect_enabled && !!d.insect_temp_entity,
+  insect_entity: (d) => !!d.insect_enabled,
+  roof_window_wind_speed: (d) => !!d.roof_window_wind_entity,
   emergency_level: (d) => !!d.emergency_entity,
   brightness_open_from: (d) => !!d.brightness_entity,
   brightness_close_from: (d) => !!d.brightness_entity,
@@ -1574,6 +1693,23 @@ Object.assign(T.de, {
   sg_appearance: "Darstellung", sg_shutters: "Rollläden", sg_awnings: "Markisen", sg_garages: "Garagentore",
   confirm_close_locked: "Tür/Fenster offen (Aussperrschutz) bei: {names}. Trotzdem herunterfahren?",
   emergency_active: "Notfall aktiv – alle Rollläden in Notfallposition",
+  c_roofs: "Dachfenster", edit_roofs: "Dachfenster bearbeiten", add_roof: "Dachfenster hinzufügen", sg_roof_windows: "Dachfenster",
+  privacy: "Sichtschutz", my_position: "My-Position", hints_title: "Hinweise zur Einstellung",
+  h_lockout_close: "Aussperrschutz erlaubt das Schließen bei offener Tür – du kannst ausgesperrt werden. Für Türen „Nur Öffnen“ oder das Profil „Terrassentür“ wählen.",
+  h_sun_never: "„Öffnen nach“ ist aus – der Sonnenschutz greift deshalb nie (er wirkt nur auf einen geöffneten Rollladen).",
+  h_open_le_close: "„Höhe offen“ ist nicht größer als „Höhe geschlossen“.",
+  h_stage2_none: "Zweite Schließstufe ist an, hat aber keinen Auslöser (Helligkeit, Uhrzeit oder Entität) – sie fährt nie.",
+  h_open2_none: "Zweite Öffnungsstufe ist an, hat aber keinen Auslöser – es wird gleich ganz geöffnet.",
+  h_open2_no_open: "Zweite Öffnungsstufe ist an, aber „Öffnen nach“ ist aus.",
+  h_frost_no_source: "„Bei Frost nur öffnen bis“ ist gesetzt, aber es gibt weder Frost-Auslöser noch Frost-Temperatur (Einstellungen → Alarme).",
+  h_frost_lock_off: "Frostsperre ist an, aber unter Einstellungen → Alarme fehlt der Temperatursensor oder „Frostsperre wenn kälter als“.",
+  h_frost_alarm_off: "Alarm Frost ist an, aber es gibt weder Frost-Auslöser noch Frost-Temperatur.",
+  h_insect_full_open: "Der Rollladen öffnet täglich ganz – der Insektenschutz entfällt dann meistens.",
+  h_roof_no_rain: "Kein Regensensor eingestellt (Einstellungen → Dachfenster) – das Dachfenster schließt bei Regen nicht.",
+  h_lux_overlap: "Helligkeit: „öffnet ab“ liegt nicht vor „schließt ab“ – die Zeitfenster überschneiden sich, morgens würde nie geöffnet.",
+  h_lux_values: "Helligkeit: der Öffnen-Wert ist nicht größer als der Schließen-Wert – das führt zu Hin- und Herfahren.",
+  h_frost_temp_missing: "Frost per Temperatur ist eingestellt, aber der Temperatursensor fehlt.",
+  h_frost_order: "Die Frostsperre-Temperatur liegt über der Frostschutz-Temperatur – normalerweise ist die Sperre die kältere Stufe.",
 });
 Object.assign(T.en, {
   control: "Control",
@@ -1588,6 +1724,23 @@ Object.assign(T.en, {
   sg_appearance: "Appearance", sg_shutters: "Shutters", sg_awnings: "Awnings", sg_garages: "Garage doors",
   confirm_close_locked: "Door/window open (lockout) at: {names}. Close anyway?",
   emergency_active: "Emergency active – all shutters in emergency position",
+  c_roofs: "Roof windows", edit_roofs: "Edit roof windows", add_roof: "Add roof window", sg_roof_windows: "Roof windows",
+  privacy: "Privacy", my_position: "My position", hints_title: "Hints on these settings",
+  h_lockout_close: "The lockout protection allows closing while the door is open – you can be locked out. For doors choose 'Opening only' or the 'Terrace door' profile.",
+  h_sun_never: "'Open by' is off – so sun protection never applies (it only works on an opened shutter).",
+  h_open_le_close: "'Open position' is not higher than 'Closed position'.",
+  h_stage2_none: "The second closing stage is on but has no trigger (brightness, time or entity) – it never runs.",
+  h_open2_none: "The second opening stage is on but has no trigger – the shutter opens fully at once.",
+  h_open2_no_open: "The second opening stage is on, but 'Open by' is off.",
+  h_frost_no_source: "'On frost only open to' is set, but there is neither a frost trigger nor a frost temperature (Settings → Alarms).",
+  h_frost_lock_off: "Frost lock is on, but the temperature sensor or 'Frost lock when colder than' is missing under Settings → Alarms.",
+  h_frost_alarm_off: "The frost alarm is on, but there is neither a frost trigger nor a frost temperature.",
+  h_insect_full_open: "The shutter opens fully every day – insect protection is then usually skipped.",
+  h_roof_no_rain: "No rain sensor set (Settings → Roof windows) – the roof window does not close when it rains.",
+  h_lux_overlap: "Brightness: 'opens from' is not before 'closes from' – the time windows overlap, it would never open in the morning.",
+  h_lux_values: "Brightness: the open value is not higher than the close value – this makes shutters go up and down.",
+  h_frost_temp_missing: "Frost by temperature is set, but the temperature sensor is missing.",
+  h_frost_order: "The frost lock temperature is above the frost protection temperature – usually the lock is the colder level.",
 });
 
 const COVER_GROUPS = [
@@ -1595,6 +1748,7 @@ const COVER_GROUPS = [
   ["shutters", "mdi:window-shutter"],
   ["awnings", "mdi:awning-outline"],
   ["garage", "mdi:garage"],
+  ["roofs", "mdi:window-open-variant"],
 ];
 
 const CONTROL_CSS = `
@@ -1632,6 +1786,7 @@ Object.assign(ShutterCaptainPanel.prototype, {
     const dc = this._hass.states[id]?.attributes?.device_class;
     if (dc === "awning") return "awnings";
     if (["garage", "gate", "door"].includes(dc)) return "garage";
+    if (dc === "window") return "roofs";
     return "shutters";
   },
 
@@ -1690,12 +1845,13 @@ Object.assign(ShutterCaptainPanel.prototype, {
     const pos = typeof a.current_position === "number" ? a.current_position : null;
     const avail = st.state !== "unavailable";
     const open = ["open", "opening"].includes(st.state);
-    const colors = { groups: "var(--sp-accent)", shutters: open ? "#f2a900" : "#5c6bc0", awnings: open ? "#ff8f00" : "#78909c", garage: open ? "#e53935" : "#43a047" };
+    const colors = { groups: "var(--sp-accent)", shutters: open ? "#f2a900" : "#5c6bc0", awnings: open ? "#ff8f00" : "#78909c", garage: open ? "#e53935" : "#43a047", roofs: open ? "#0288d1" : "#546e7a" };
     const icons = {
       groups: "mdi:window-shutter-cog",
       shutters: open ? "mdi:window-shutter-open" : "mdi:window-shutter",
       awnings: open ? "mdi:awning" : "mdi:awning-outline",
       garage: a.device_class === "gate" ? (open ? "mdi:gate-open" : "mdi:gate") : (open ? "mdi:garage-open-variant" : "mdi:garage-variant"),
+      roofs: open ? "mdi:window-open-variant" : "mdi:window-closed-variant",
     };
     const label = this._hass.formatEntityState ? this._hass.formatEntityState(st) : st.state;
     const dis = avail ? "" : "disabled";

@@ -197,3 +197,37 @@ def test_random_offset_is_stable_and_bounded():
     assert a == logic.random_offset_minutes("2026-11-25|cover.kitchen", 20)
     assert -20 <= a <= 20
     assert logic.random_offset_minutes("x", 0) == 0
+
+
+def test_stage_time_night_rolls_over_midnight():
+    start = datetime(2026, 11, 27, 21, 0, tzinfo=TZ)
+    at_2230 = datetime(2026, 11, 27, 22, 30, tzinfo=TZ)
+    assert not logic.stage_time_reached(start, time(23, 0), at_2230, night=True)
+    assert logic.stage_time_reached(start, time(22, 0), at_2230, night=True)
+    assert not logic.stage_time_reached(start, time(1, 0), at_2230, night=True)
+    assert logic.stage_time_reached(start, time(1, 0), datetime(2026, 11, 28, 1, 0, tzinfo=TZ), night=True)
+    # an evening time already passed when stage 1 ran: at once
+    assert logic.stage_time_reached(start, time(20, 0), start, night=True)
+
+
+def test_stage_time_morning_passed_means_now():
+    start = datetime(2026, 11, 27, 10, 0, tzinfo=TZ)
+    assert logic.stage_time_reached(start, time(9, 0), start, night=False)
+    assert not logic.stage_time_reached(start, time(11, 0), start, night=False)
+
+
+def test_below_limit_has_hysteresis_and_off():
+    assert logic.below_limit(False, -1.0, 0.0)
+    assert not logic.below_limit(False, 0.5, 0.0)
+    assert logic.below_limit(True, 0.5, 0.0)  # stays on until 1 °C
+    assert not logic.below_limit(True, 1.0, 0.0)
+    assert logic.below_limit(True, None, 0.0)
+    assert not logic.below_limit(True, -20.0, -50.0)  # -50 = off
+
+
+def test_time_window_wraps():
+    assert logic.in_time_window(time(12, 0), time(11, 0), time(16, 0))
+    assert not logic.in_time_window(time(16, 0), time(11, 0), time(16, 0))
+    assert logic.in_time_window(time(23, 0), time(22, 0), time(2, 0))
+    assert not logic.in_time_window(time(12, 0), time(22, 0), time(2, 0))
+    assert logic.in_time_window(time(3, 0), None, time(2, 0))

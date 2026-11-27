@@ -212,6 +212,10 @@ class ShutterCaptainOptionsFlow(OptionsFlow):
         """Garage door settings."""
         return await self._section("garages", user_input)
 
+    async def async_step_roof_windows(self, user_input=None) -> ConfigFlowResult:
+        """Roof window settings."""
+        return await self._section("roof_windows", user_input)
+
     async def async_step_appearance(self, user_input=None) -> ConfigFlowResult:
         """Colours and weather for panel and card."""
         return await self._section("appearance", user_input)
@@ -292,7 +296,11 @@ class ShutterSubentryFlow(ConfigSubentryFlow):
 
     async def async_step_extra(self, user_input=None) -> SubentryFlowResult:
         """Extras and alarms."""
-        return await self._step("extra", None, user_input)
+        return await self._step("extra", "positions", user_input)
+
+    async def async_step_positions(self, user_input=None) -> SubentryFlowResult:
+        """Privacy/My position, frost and insect protection."""
+        return await self._step("positions", None, user_input)
 
     def _finish(self) -> SubentryFlowResult:
         cover = self._data["cover_entity"]

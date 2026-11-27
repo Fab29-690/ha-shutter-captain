@@ -107,6 +107,8 @@ class ShutterStatusSensor(ShutterEntity, SensorEntity):
     @property
     def icon(self) -> str:
         """Icon by state."""
+        if self.ctrl.device_type == "roof_window" and self.native_value in ("up", "down"):
+            return "mdi:window-open-variant" if self.native_value == "up" else "mdi:window-closed-variant"
         return {
             "up": "mdi:window-shutter-open",
             "down": "mdi:window-shutter",
@@ -122,6 +124,12 @@ class ShutterStatusSensor(ShutterEntity, SensorEntity):
             "wind1": "mdi:weather-windy",
             "wind2": "mdi:weather-windy-variant",
             "frost": "mdi:snowflake-alert",
+            "frost_lock": "mdi:snowflake-off",
+            "open_partly": "mdi:window-shutter-settings",
+            "insect": "mdi:bug-outline",
+            "privacy": "mdi:eye-off-outline",
+            "my_position": "mdi:star-outline",
+            "emergency": "mdi:alarm-light",
         }.get(self.native_value, "mdi:window-shutter-auto")
 
     @property

@@ -23,6 +23,11 @@ from .const import (
     AREAS,
     DOMAIN,
     STATE_EMERGENCY,
+    STATE_FROST_LOCK,
+    STATE_INSECT,
+    STATE_MY,
+    STATE_OPEN_PARTLY,
+    STATE_PRIVACY,
     WINDOW_PROFILE_SETTINGS,
     STATE_DOWN,
     STATE_HEAT,
@@ -127,6 +132,14 @@ class ShutterController:
         self._stage2_for: datetime | None = None
         self._dark_since: datetime | None = None
         self._open_since: datetime | None = None
+        # second opening stage
+        self._open1_at: datetime | None = None
+        self._bright_since: datetime | None = None
+        # insect protection: once a day fully up and back (stored, so no second run after a restart)
+        self._insect_day: date | None = None
+        self._top_day: date | None = None
+        self._insect_back: tuple[int, int | None, str] | None = None
+        self._insect_unsub: Callable[[], None] | None = None
         # garage doors: emergency opener (escape route) and the light timer
         self.garage_emergency = False
         self.garage_venting = False
@@ -157,6 +170,12 @@ class ShutterController:
         self.state = data.get("state", STATE_NONE)
         self.last_move = _parse_dt(data.get("last_move"))
         self._expected = data.get("expected")
+        self._open1_at = _parse_dt(data.get("open1_at"))
+        self._insect_day = _parse_date(data.get("insect_day"))
+        self._top_day = _parse_date(data.get("top_day"))
+        back = data.get("insect_back")
+        if isinstance(back, list) and len(back) == 3 and back[0] is not None:
+            self._insect_back = (int(back[0]), back[1], str(back[2]))
 
     def as_store(self) -> dict[str, Any]:
         """Data for the hub's Store."""
@@ -174,6 +193,10 @@ class ShutterController:
             "state": self.state,
             "last_move": _iso(self.last_move),
             "expected": self._expected,
+            "open1_at": _iso(self._open1_at),
+            "insect_day": self._insect_day.isoformat() if self._insect_day else None,
+            "top_day": self._top_day.isoformat() if self._top_day else None,
+            "insect_back": list(self._insect_back) if self._insect_back else None,
         }
 
     def _changed(self) -> None:
@@ -194,6 +217,15 @@ class ShutterController:
                 self._open_since = dt_util.utcnow()
             self.state = STATE_DOWN if cover is None or self._garage_is_closed(cover) else STATE_UP
             return
+        if self.device_type == "roof_window":
+            position = self.position
+            closed = position is None or position <= int(self.cfg["close_level"]) + self._tolerance()
+            self._open_since = None if closed else dt_util.utcnow()
+            self.state = STATE_DOWN if closed else STATE_UP
+            return
+        if self._insect_back is not None:
+            # Restarted during the insect run: go back to where the shutter was.
+            self._insect_unsub = async_call_later(self.hass, 30, self._insect_return)
         window_entities = [e for e in (self.cfg.get("window_entity"), self.cfg.get("tilt_entity")) if e]
         if window_entities:
             self._unsubs.append(
@@ -242,6 +274,9 @@ class ShutterController:
         self._unsubs.clear()
         self._cancel_window_timer()
         self._cancel_vent_timer()
+        if self._insect_unsub:
+            self._insect_unsub()
+            self._insect_unsub = None
         if self._light_off:
             self._light_off()
             self._light_off = None
@@ -304,7 +339,7 @@ class ShutterController:
 
     @property
     def device_type(self) -> str:
-        """shutter | awning | garage."""
+        """shutter | awning | garage | roof_window."""
         return self.cfg.get("device_type", "shutter")
 
     @property
@@ -346,16 +381,28 @@ class ShutterController:
     def _opt(self, key: str) -> Any:
         """Global setting – awnings and garage doors have their own copy of the shared ones."""
         own = f"{self.device_type}_{key}"
-        if self.device_type in ("awning", "garage") and own in self.hub.options:
+        if self.device_type in ("awning", "garage", "roof_window") and own in self.hub.options:
             return self.hub.options[own]
         return self.hub.options[key]
 
     def _alarm_enabled(self, alarm: str) -> bool:
         # Awnings have their own wind/rain/frost sensors and emergency settings,
         # garage doors their emergency opener – the shutter alarms do not apply to them.
-        if self.device_type in ("awning", "garage"):
+        if self.device_type in ("awning", "garage", "roof_window"):
             return False
         return bool(self.cfg.get(f"alarm_{alarm}"))
+
+    def _frost_lock_active(self) -> bool:
+        """Frost lock: below the lock temperature this shutter is not moved automatically (frozen)."""
+        return self.device_type == "shutter" and bool(self.cfg.get("frost_lock")) and self.hub.frost_locked
+
+    def _open_level(self) -> int:
+        """Open position – limited to the frost position while frost is active."""
+        level = int(self.cfg["open_level"])
+        frost = int(self.cfg.get("frost_open_level", -1))
+        if self.device_type == "shutter" and frost >= 0 and self.hub.alarms_active.get("frost"):
+            return min(level, frost)
+        return level
 
     def _tolerance(self) -> int:
         return int(self._opt("position_tolerance"))
@@ -452,7 +499,16 @@ class ShutterController:
             self._set_reason("condition_no_open")
             return
         self._event_releases_manual()
-        await self._apply(int(self.cfg["open_level"]), STATE_UP, reason="scheduled_open")
+        if self.cfg.get("open2_enabled") and self._stage_results("open2", dt_util.now(), False):
+            # Opening stage 1: first only partly open; stage 2 opens fully later (lux, time, entity).
+            level = min(int(self.cfg.get("open1_level", 30)), self._open_level())
+            self._open1_at = dt_util.now()
+            self._bright_since = None
+            await self._apply(level, STATE_OPEN_PARTLY, reason="open_stage1")
+            self._lamp(False)
+            await self.async_check_stages()
+            return
+        await self._apply(self._open_level(), STATE_UP, reason="scheduled_open")
         self._lamp(False)
         await self.async_evaluate_sun()
 
@@ -537,6 +593,9 @@ class ShutterController:
         if self.device_type == "garage":
             await self.async_garage_vent()
             return
+        if self.device_type == "roof_window":
+            await self.async_roof_vent()
+            return
         level = int(self.cfg.get("vent_level", 30))
         self.manual = True
         self.paused = False
@@ -544,6 +603,23 @@ class ShutterController:
         await self._move(level, force=True, reason="vent_button")
         self.state = STATE_MANUAL
         self._set_reason("vent_button")
+
+    async def async_position(self, kind: str, *, override_lockout: bool = False) -> None:
+        """Privacy / My position: go there and hold it (manual) until the next scheduled event."""
+        if self.device_type not in ("shutter", "awning"):
+            return
+        level = int(self.cfg.get("privacy_level" if kind == "privacy" else "my_level", 30 if kind == "privacy" else 50))
+        if not override_lockout and self.lockout_blocks(level):
+            self.pending = True
+            self.state = STATE_LOCKED
+            self._set_reason("window_lockout")
+            return
+        self.manual = True
+        self.paused = False
+        self.manual_until = None
+        await self._move(level, force=True, reason=f"{kind}_button", override_lockout=override_lockout)
+        self.state = STATE_PRIVACY if kind == "privacy" else STATE_MY
+        self._set_reason(f"{kind}_button")
 
     def _event_releases_manual(self) -> None:
         if self.manual and not self.paused and self._opt("manual_reset") == "next_event":
@@ -567,12 +643,22 @@ class ShutterController:
             elif action == "close":
                 await self._garage_move("close", self._garage_level("close"), "command_close")
             return
+        if self.device_type == "roof_window":
+            if action == "open":
+                if guard := self.hub.roof_guard():
+                    self._set_reason(f"roof_blocked_{guard}")
+                    return
+                await self._move(int(self.cfg["open_level"]), force=True, reason="command_open")
+                self._set_reason("command_open")
+            elif action == "close":
+                await self.async_roof_close("command_close", always=True)
+            return
         self.manual = False
         self.paused = False
         self.manual_until = None
         self.fire_latched = False
         if action == "open":
-            await self._apply(int(self.cfg["open_level"]), STATE_UP, reason="command_open")
+            await self._apply(self._open_level(), STATE_UP, reason="command_open")
         elif action == "close":
             level, state = self._close_target()
             await self._apply(level, state, reason="command_close")
@@ -586,8 +672,8 @@ class ShutterController:
         self.manual = False
         self.paused = False
         self.manual_until = None
-        if self.device_type == "garage":
-            # Garage doors have no "automation position" – never move them on resume.
+        if self.device_type in ("garage", "roof_window"):
+            # Garage doors / roof windows have no "automation position" – never move them on resume.
             self._set_reason("resumed")
             return
         if self.desired_state is None:
@@ -659,6 +745,10 @@ class ShutterController:
         if self.fire_latched or self.alarm:
             self._set_reason(f"blocked_alarm_{'fire' if self.fire_latched else self.alarm}")
             return
+        if self._frost_lock_active() and not reason.startswith("command_") and reason != "resumed":
+            self.state = STATE_FROST_LOCK
+            self._set_reason("blocked_frost_lock")
+            return
         if self._manual_active():
             self._set_reason("blocked_manual")
             return
@@ -679,6 +769,7 @@ class ShutterController:
                     self.cfg["window_tilt_level"] if window == "tilted" else self.cfg["window_open_level"]
                 )
                 if level < vent_level:
+                    self._cancel_insect()
                     await self._move(level, tilt)
                     self.state = state
                     self.pending = True
@@ -687,9 +778,17 @@ class ShutterController:
                     return
 
         self.pending = False
+        self._cancel_insect()
         await self._move(level, tilt)
         self.state = state
         self._changed()
+
+    def _cancel_insect(self) -> None:
+        """A real automation move replaces the pending return of the insect protection run."""
+        if self._insect_unsub:
+            self._insect_unsub()
+            self._insect_unsub = None
+        self._insect_back = None
 
     def _schedule_vent(self, vent_level: int) -> None:
         """After a full close with open window, go back up to the vent level."""
@@ -697,7 +796,7 @@ class ShutterController:
 
         async def _vent(_now: datetime) -> None:
             self._vent_timer = None
-            if self.window_state() == "closed" or self.alarm or self.fire_latched:
+            if self.window_state() == "closed" or self.alarm or self.fire_latched or self._frost_lock_active():
                 return
             await self._move(vent_level)
             self.state = STATE_TRIGGERED
@@ -812,6 +911,18 @@ class ShutterController:
                 self.state = STATE_DOWN if closed else STATE_UP
             self.hub.async_update()
             return
+        if new is not None and self.device_type == "roof_window":
+            if new.state in (STATE_UNAVAILABLE, STATE_UNKNOWN, "opening", "closing"):
+                return
+            position = self.position
+            closed = new.state == "closed" or (position is not None and position <= int(self.cfg["close_level"]) + self._tolerance())
+            self._open_since = None if closed else (self._open_since or dt_util.utcnow())
+            self.state = STATE_DOWN if closed else STATE_UP
+            if not closed and self.hub.roof_guard():
+                # Opened while it rains / is windy: close again.
+                self.hass.async_create_task(self.async_check_roof())
+            self.hub.async_update()
+            return
         if new is None or new.state in ("opening", "closing"):
             return
         if self._pending_tilt is not None:
@@ -819,6 +930,9 @@ class ShutterController:
         pos = self.position
         if pos is None:
             return
+        if pos >= 100 - self._tolerance():
+            # Fully up today: the insect protection run is not needed any more.
+            self._top_day = dt_util.now().date()
         old = event.data["old_state"]
         old_pos = old.attributes.get("current_position") if old else None
         if self.emergency:
@@ -900,7 +1014,10 @@ class ShutterController:
         self.hub.async_update()
 
     async def _window_opened(self, window: str) -> None:
-        if self.emergency or self.alarm or self.fire_latched or self._manual_active() or not self.hub.active:
+        if (
+            self.emergency or self.alarm or self.fire_latched or self._manual_active()
+            or not self.hub.active or self._frost_lock_active()
+        ):
             self.hub.async_update()
             return
         if self.cfg["window_action"] not in ("open", "open_close"):
@@ -1030,7 +1147,7 @@ class ShutterController:
 
     async def async_evaluate_sun(self) -> None:
         """Start/stop shading. Runs every minute and after every open."""
-        if self.device_type == "garage":
+        if self.device_type in ("garage", "roof_window"):
             return
         if self.device_type == "awning":
             await self._evaluate_awning()
@@ -1038,11 +1155,13 @@ class ShutterController:
         await self._check_manual_expiry()
         if self.emergency or self.alarm or self.fire_latched or self._manual_active() or not self.hub.active:
             return
+        if self._insect_back is not None:
+            return
         if self.desired_state not in DAY_STATES:
             return
         if self.cfg["sun_mode"] == "off" and not self.cfg["heat_protection"]:
             if self.desired_state in (STATE_SUN, STATE_HEAT):
-                await self._apply(int(self.cfg["open_level"]), STATE_UP, reason="sun_disabled")
+                await self._apply(self._open_level(), STATE_UP, reason="sun_disabled")
             return
 
         wanted, heat = self._sun_wanted()
@@ -1054,7 +1173,7 @@ class ShutterController:
         elif wanted:
             target_state, level, tilt = STATE_SUN, int(self.cfg["sun_level"]), self._sun_tilt()
         else:
-            target_state, level, tilt = STATE_UP, int(self.cfg["open_level"]), None
+            target_state, level, tilt = STATE_UP, self._open_level(), None
 
         if target_state == self.desired_state:
             self._sun_end_since = None
@@ -1326,7 +1445,7 @@ class ShutterController:
 
     async def async_emergency(self, active: bool) -> None:
         """Emergency input: highest priority, overrides alarms, manual mode and the main switch."""
-        if self.device_type == "garage":
+        if self.device_type in ("garage", "roof_window"):
             return
         self.emergency = active
         if active:
@@ -1362,37 +1481,78 @@ class ShutterController:
 
     # ------------------------------------------------------------- closing stages
 
-    def _blocked_for_stages(self) -> bool:
+    def _blocked_for_stages(self, direction: str = "down") -> bool:
         return (
             self.emergency or self.alarm is not None or self.fire_latched or self._manual_active()
-            or not self.hub.active or not self.auto_down or self.window_state() != "closed"
+            or not self.hub.active or not (self.auto_up if direction == "up" else self.auto_down)
+            or self.window_state() != "closed" or self._frost_lock_active()
+            or self._insect_back is not None
         )
 
+    def _lux_held(self, prefix: str, attr: str, below: bool) -> bool:
+        """Brightness below (closing) / at least (opening) the stage limit for long enough."""
+        cfg = self.cfg
+        limit = float(cfg.get(f"{prefix}_lux") or 0)
+        if not cfg.get(f"{prefix}_enabled") or limit <= 0:
+            setattr(self, attr, None)
+            return False
+        lux_entity = cfg.get(f"{prefix}_lux_entity")
+        lux = _number(self.hass, lux_entity) if lux_entity else self.hub.brightness()
+        if lux is None or (lux >= limit if below else lux < limit):
+            setattr(self, attr, None)
+            return False
+        now = dt_util.now()
+        since = getattr(self, attr) or now
+        setattr(self, attr, since)
+        return now - since >= timedelta(minutes=int(cfg.get(f"{prefix}_lux_minutes", 5)))
+
+    def _stage_results(self, prefix: str, since: datetime, lux_ok: bool) -> list[bool]:
+        """One result per configured trigger of a stage (brightness, time, entity)."""
+        cfg = self.cfg
+        results: list[bool] = []
+        if float(cfg.get(f"{prefix}_lux") or 0) > 0:
+            results.append(lux_ok)
+        at = logic.parse_time(cfg.get(f"{prefix}_from"))
+        if at is not None and (at.hour or at.minute):
+            results.append(logic.stage_time_reached(since, at, dt_util.now(), night=prefix == "close2"))
+        if entity := cfg.get(f"{prefix}_entity"):
+            results.append(state_is_on(self.hass.states.get(entity)))
+        return results
+
+    async def _check_open_stage(self, now: datetime, bright: bool) -> bool:
+        """Opening stage 2: from the partial morning position to fully open."""
+        cfg = self.cfg
+        if not cfg.get("open2_enabled") or self.desired_state != STATE_OPEN_PARTLY:
+            return False
+        since = self._open1_at or now
+        if now - since > timedelta(hours=16) or self._blocked_for_stages("up"):
+            return False
+        results = self._stage_results("open2", since, bright)
+        if not logic.conditions_met(results, cfg.get("open2_logic", "or")):
+            return False
+        self._open1_at = None
+        await self._apply(self._open_level(), STATE_UP, reason="open_stage2")
+        await self.async_evaluate_sun()
+        return True
+
     async def async_check_stages(self) -> None:
-        """Stage 1 by entity (e.g. light on) and stage 2 (night position) – runs every minute."""
+        """Opening stage 2, closing stage 1 by entity and closing stage 2 (night) – runs every minute."""
         if self.device_type != "shutter":
             return
         now = dt_util.now()
         cfg = self.cfg
-        # Darkness for stage 2 is measured all the time, so stage 2 can follow stage 1
-        # immediately when it is already dark at the evening close.
-        lux_limit = float(cfg.get("close2_lux") or 0)
-        dark_long_enough = False
-        if cfg.get("close2_enabled") and lux_limit > 0:
-            lux_entity = cfg.get("close2_lux_entity")
-            lux = _number(self.hass, lux_entity) if lux_entity else self.hub.brightness()
-            if lux is not None and lux < lux_limit:
-                self._dark_since = self._dark_since or now
-                dark_long_enough = now - self._dark_since >= timedelta(minutes=int(cfg.get("close2_lux_minutes", 5)))
-            else:
-                self._dark_since = None
+        # Brightness is measured all the time, so a stage can follow immediately.
+        dark_long_enough = self._lux_held("close2", "_dark_since", below=True)
+        bright_long_enough = self._lux_held("open2", "_bright_since", below=False)
+        if await self._check_open_stage(now, bright_long_enough):
+            return
 
         # Stage 1: an entity turning on also closes (from a time on), while still open.
         trigger1 = cfg.get("close1_entity")
         from1 = logic.parse_time(cfg.get("close1_from"))
         if (
             trigger1
-            and self.desired_state in DAY_STATES
+            and self.desired_state in (*DAY_STATES, STATE_OPEN_PARTLY)
             and (from1 is None or now.time() >= from1)
             and state_is_on(self.hass.states.get(trigger1))
             and not self._blocked_for_stages()
@@ -1400,22 +1560,16 @@ class ShutterController:
             await self.async_auto_close()
             return
 
-        # Stage 2: only after stage 1 today, automation on, no lock, window closed.
+        # Stage 2: only after a full close today, automation on, no lock, window closed.
         if not cfg.get("close2_enabled") or self._stage1_at is None:
             return
         if self._stage2_for == self._stage1_at or now - self._stage1_at > timedelta(hours=16):
             return
-        if self.desired_state not in (STATE_DOWN, STATE_INTERMEDIATE) or self._blocked_for_stages():
+        if self.desired_state != STATE_DOWN or self._blocked_for_stages():
             return
-        from2 = logic.parse_time(cfg.get("close2_from"))
-        if from2 and from2.hour + from2.minute > 0 and from2 > now.time() and now.date() == self._stage1_at.date():
-            return
-        triggered = False
-        if (entity2 := cfg.get("close2_entity")) and state_is_on(self.hass.states.get(entity2)):
-            triggered = True
-        if dark_long_enough:
-            triggered = True
-        if not triggered:
+        # AND: every configured trigger must apply · OR: one is enough. No trigger = never.
+        results = self._stage_results("close2", self._stage1_at, dark_long_enough)
+        if not logic.conditions_met(results, cfg.get("close2_logic", "and")):
             return
         self._stage2_for = self._stage1_at
         tilt = int(cfg.get("close2_tilt", -1))
@@ -1426,8 +1580,146 @@ class ShutterController:
             reason="stage2",
         )
 
+    # ------------------------------------------------------------- frost
+
+    async def async_frost_lock_changed(self, locked: bool) -> None:
+        """Frost lock started/ended (hub temperature)."""
+        if self.device_type != "shutter" or not self.cfg.get("frost_lock"):
+            return
+        if locked:
+            self.state = STATE_FROST_LOCK
+            self._set_reason("frost_lock")
+            return
+        if self.desired_level is None or not self.desired_state:
+            self._set_reason("frost_lock_cleared")
+            return
+        await self._apply(
+            int(self.desired_level), self.desired_state, tilt=self.desired_tilt, reason="frost_lock_cleared"
+        )
+
+    async def _frost_open_cleared(self) -> None:
+        """Frost over: a shutter opened only to the frost position now opens fully."""
+        if (
+            self.device_type != "shutter"
+            or int(self.cfg.get("frost_open_level", -1)) < 0
+            or self.desired_state != STATE_UP
+            or self.desired_level is None
+            or int(self.desired_level) >= int(self.cfg["open_level"])
+        ):
+            return
+        await self._apply(int(self.cfg["open_level"]), STATE_UP, reason="frost_cleared_open")
+        await self.async_evaluate_sun()
+
+    # ------------------------------------------------------------- insect protection
+
+    async def async_check_insect(self) -> None:
+        """Once a day briefly fully up and back (insects in the shutter box) – runs every minute."""
+        cfg = self.cfg
+        if self.device_type != "shutter" or not cfg.get("insect_enabled") or self._insect_back is not None:
+            return
+        now = dt_util.now()
+        today = now.date()
+        if self._insect_day == today:
+            return
+        if self._top_day == today:
+            # Already fully up today – nothing to do.
+            self._insect_day = today
+            self._changed()
+            return
+        if not logic.in_time_window(now.time(), logic.parse_time(cfg.get("insect_from")), logic.parse_time(cfg.get("insect_to"))):
+            return
+        if temp_entity := cfg.get("insect_temp_entity"):
+            temp = _number(self.hass, temp_entity)
+            if temp is None or temp < float(cfg.get("insect_min_temp", 15)):
+                return
+        if (cond := cfg.get("insect_entity")) and not state_is_on(self.hass.states.get(cond)):
+            return
+        # Waits while the window is open, a lock/alarm/frost is active or the automation is off.
+        if (
+            self.emergency or self.alarm or self.fire_latched or self._manual_active() or self.paused
+            or not self.hub.active or self.hub.alarms_active.get("frost") or self._frost_lock_active()
+            or self.window_state() != "closed" or self.pending
+        ):
+            return
+        position = self.position
+        if position is None:
+            return
+        self._insect_day = today
+        if position >= 100 - self._tolerance():
+            # Already at the top: nothing to drive.
+            self._changed()
+            return
+        self._insect_back = (position, self.tilt, self.state)
+        await self._move(100, force=True, reason="insect")
+        self.state = STATE_INSECT
+        self._set_reason("insect")
+        self._insect_unsub = async_call_later(
+            self.hass, max(int(self._opt("wait_time")), 20), self._insect_return
+        )
+
+    @callback
+    def _insect_return(self, _now: datetime | None = None) -> None:
+        self._insect_unsub = None
+        self.hass.async_create_task(self._insect_restore())
+
+    async def _insect_restore(self) -> None:
+        """Back to the previous position and slat angle."""
+        back, self._insect_back = self._insect_back, None
+        if back is None:
+            return
+        level, tilt, state = back
+        if self.emergency or self.alarm or self.fire_latched or self._manual_active():
+            # Something more important took over meanwhile.
+            self._changed()
+            return
+        await self._move(int(level), tilt, force=True, reason="insect_back")
+        self.state = state if state not in (STATE_INSECT, STATE_LOCKED) else (self.desired_state or STATE_NONE)
+        self._set_reason("insect_done")
+
+    # ------------------------------------------------------------- roof windows
+
+    async def async_check_roof(self) -> None:
+        """Close on rain/wind (always) and after being open too long – runs every minute."""
+        if self.device_type != "roof_window":
+            return
+        if guard := self.hub.roof_guard():
+            await self.async_roof_close(f"roof_{guard}", always=True)
+            return
+        minutes = int(self.hub.options.get("roof_window_auto_close_minutes", 0) or 0)
+        if minutes and self._open_since and dt_util.utcnow() - self._open_since >= timedelta(minutes=minutes):
+            await self.async_roof_close("roof_auto_close")
+
+    async def async_roof_close(self, reason: str, *, always: bool = False) -> None:
+        """Close the roof window (rain/wind and explicit commands also in manual mode / main switch off)."""
+        if not always and (not self.hub.active or self._manual_active()):
+            return
+        cover = self.hass.states.get(self.cover_entity)
+        position = self.position
+        if cover is None or cover.state == "closing" or position is None:
+            return
+        closed_level = int(self.cfg["close_level"])
+        if position <= closed_level + self._tolerance() or cover.state == "closed":
+            return
+        await self._move(closed_level, force=True, reason=reason)
+        self.desired_state, self.desired_level = STATE_DOWN, closed_level
+        self.state = STATE_DOWN
+        self._open_since = None
+        self._set_reason(reason)
+
+    async def async_roof_vent(self) -> None:
+        """Vent button: open the roof window to the vent position (not while it rains / is windy)."""
+        if guard := self.hub.roof_guard():
+            self._set_reason(f"roof_blocked_{guard}")
+            return
+        await self._move(int(self.hub.options.get("roof_window_vent_level", 20)), force=True, reason="roof_vent")
+        self.state = STATE_UP
+        self._open_since = self._open_since or dt_util.utcnow()
+        self._set_reason("roof_vent")
+
     async def async_alarm_changed(self, alarm: str, active: bool) -> None:
         """React to a global alarm."""
+        if alarm == "frost" and not active and not self.emergency and not self._manual_active():
+            await self._frost_open_cleared()
         if not self._alarm_enabled(alarm):
             return
         if self.emergency:
@@ -1450,7 +1742,7 @@ class ShutterController:
         if alarm == "frost":
             if self.alarm or self.fire_latched or self._manual_active():
                 return
-            if active and self.desired_state in (STATE_DOWN, STATE_INTERMEDIATE):
+            if active and self.desired_state in (STATE_DOWN, STATE_INTERMEDIATE) and not self._frost_lock_active():
                 await self._move(self.hub.alarm_level("frost"))
                 self.state = "frost"
                 self._set_reason("alarm_frost")
@@ -1469,7 +1761,11 @@ class ShutterController:
         if self.fire_latched:
             self._changed()
             return
-        if new:
+        if new and self._frost_lock_active():
+            # Frozen: do not move, only remember the alarm.
+            self.state = new
+            self._set_reason(f"alarm_{new}_frost_lock")
+        elif new:
             # Awnings retract (closed position) on wind and rain instead of the shutter level.
             level = int(self.cfg["close_level"]) if self.cfg.get("device_type") == "awning" else self.hub.alarm_level(new)
             await self._move(level, force=True, reason=f"alarm_{new}")
@@ -1526,6 +1822,14 @@ class ShutterController:
             "closing_locked": self.lockout_blocks(int(self.cfg["close_level"])),
             "stage2_done": self._stage2_for is not None and self._stage2_for == self._stage1_at,
             "vent_level": self.cfg.get("vent_level", 30),
+            "privacy_level": self.cfg.get("privacy_level", 30),
+            "my_level": self.cfg.get("my_level", 50),
+            "frost_lock": self._frost_lock_active(),
+            "frost_open_level": self.cfg.get("frost_open_level", -1),
+            "insect_enabled": bool(self.cfg.get("insect_enabled")),
+            "insect_done": self._insect_day == dt_util.now().date(),
+            "open_partly": self.desired_state == STATE_OPEN_PARTLY,
+            "roof_guard": self.hub.roof_guard() if self.device_type == "roof_window" else None,
         }
 
 
@@ -1537,6 +1841,15 @@ def _number(hass, entity_id: str | None) -> float | None:
 
 def _iso(moment: datetime | None) -> str | None:
     return moment.isoformat() if moment else None
+
+
+def _parse_date(value: Any) -> date | None:
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(str(value))
+    except ValueError:
+        return None
 
 
 def _parse_dt(value: Any) -> datetime | None:

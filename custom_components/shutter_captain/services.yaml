@@ -32,6 +32,7 @@ command:
             - shutter
             - awning
             - garage
+            - roof_window
 
 pause:
   fields:
@@ -67,3 +68,31 @@ vent:
         entity:
           domain: cover
           multiple: true
+
+privacy:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          domain: cover
+          multiple: true
+    override_lockout:
+      required: false
+      default: false
+      selector:
+        boolean:
+
+my_position:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          domain: cover
+          multiple: true
+    override_lockout:
+      required: false
+      default: false
+      selector:
+        boolean:

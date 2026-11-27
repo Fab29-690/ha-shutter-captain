@@ -26,7 +26,10 @@ Inspired by the excellent ioBroker adapter *shuttercontrol*, rebuilt natively fo
 | **Per shutter** | Open and close independently by area, area *with* auto switch, sunrise/sunset, sun elevation, golden hour, brightness sensor or manual only. Own open/closed positions. |
 | **Sun protection** | By sun position (window orientation ± range), outside temperature, inside temperature and/or light sensor, AND-combined, with hysteresis. Ends below a configurable sun elevation. Keep-until-evening, end delay and heat protection. **Slat tilt** for venetian blinds. |
 | **Window & door** | Open/tilt contact, vent positions, move on open/close, *lockout protection* (which direction may move while the door is open), close-then-vent, catch up after closing, delays. |
-| **Alarms** | Fire (latched – escape routes stay open until released), rain, wind 1/2, frost – per shutter selectable, with priorities. |
+| **Alarms** | Fire (latched – escape routes stay open until released), rain, wind 1/2, frost – per shutter selectable, with priorities. Frost also by temperature, with a **frost opening position** and a **frost lock** (no automatic moves when frozen). |
+| **Stages** | Closing stage 1 by entity, closing stage 2 (night) by brightness, time and/or entity with AND/OR – only after a full close. **Opening stage 2**: in the morning first a partial position, fully open later. |
+| **Positions** | **Privacy** and **My position** per shutter as buttons, services and in panel and card. **Insect protection**: once a day briefly fully up and back. |
+| **Device types** | Shutters/blinds, awnings, garage doors/gates and **roof windows** (rain/wind closing, auto close, vent) – each with its own settings and symbol. |
 | **Calendar** | Workday sensor (holidays), workday tomorrow, vacation switch/entity, school holidays per area, summer period (don't close), Christmas position, late close, intermediate position. |
 | **Manual detection** | Moving a shutter by hand pauses its automation. Moving it to a known position keeps automation active (with rounding). Ends at the next scheduled event, after a timeout or only on resume – your choice. |
 | **Group commands** | Open / close / sun protection / resume for all or per area – as buttons, services and in the panel. |
@@ -41,6 +44,7 @@ Inspired by the excellent ioBroker adapter *shuttercontrol*, rebuilt natively fo
 - **Explainable**: every shutter exposes a `reason` attribute ("window open – lockout blocks the move").
 - **Brightness control with guard**: darkness only closes in the evening and brightness only opens in the morning, after a minimum duration – passing clouds don't close the house.
 - Manual mode can expire automatically.
+- **Plausibility hints** in the panel point out settings that contradict each other or can never have an effect.
 - Diagnostics download, German and English translations, light and dark theme.
 
 ## Installation
@@ -151,6 +155,9 @@ data: { entity_id: cover.living_room }
 
 action: shutter_captain.vent          # move to the vent position
 data: { entity_id: cover.living_room }
+
+action: shutter_captain.privacy       # privacy position (or: shutter_captain.my_position)
+data: { entity_id: cover.living_room }  # override_lockout: true only after asking the user
 ```
 
 ## Coming from ioBroker shuttercontrol

@@ -30,6 +30,8 @@ async def async_setup_entry(
     async_add_entities(buttons)
     for subentry_id, ctrl in hub.shutters.items():
         buttons = [ResumeButton(ctrl), VentButton(ctrl)]
+        if ctrl.device_type in ("shutter", "awning"):
+            buttons += [PositionButton(ctrl, "privacy"), PositionButton(ctrl, "my_position")]
         async_add_entities(buttons, config_subentry_id=subentry_id)
 
 
@@ -58,6 +60,19 @@ class ResumeButton(ShutterEntity, ButtonEntity):
     async def async_press(self) -> None:
         """Resume."""
         await self.ctrl.async_resume()
+
+
+class PositionButton(ShutterEntity, ButtonEntity):
+    """Privacy / My position (held until the next scheduled event)."""
+
+    def __init__(self, ctrl, kind: str) -> None:
+        super().__init__(ctrl, kind)
+        self.kind = "privacy" if kind == "privacy" else "my"
+        self._attr_icon = "mdi:eye-off-outline" if kind == "privacy" else "mdi:star-outline"
+
+    async def async_press(self) -> None:
+        """Move to the position (the lockout protection applies)."""
+        await self.ctrl.async_position(self.kind)
 
 
 class VentButton(ShutterEntity, ButtonEntity):

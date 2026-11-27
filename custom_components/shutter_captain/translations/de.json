@@ -28,7 +28,8 @@
           "behaviour": "Verhalten & Handbetrieb",
           "appearance": "Darstellung",
           "awnings": "Markisen",
-          "garages": "Garagentore"
+          "garages": "Garagentore",
+          "roof_windows": "Dachfenster"
         }
       },
       "area_living": {
@@ -169,6 +170,9 @@
         "data": {
           "emergency_entity": "Notfall-Eingang",
           "emergency_level": "Notfall-Position",
+          "frost_temp_entity": "Frost: Temperatursensor",
+          "frost_protect_below": "Frostschutz wenn kälter als",
+          "frost_lock_below": "Frostsperre wenn kälter als",
           "alarm_fire_entity": "Feuer: Auslöser",
           "alarm_fire_level": "Feuer: Höhe",
           "alarm_rain_entity": "Regen: Auslöser",
@@ -182,7 +186,31 @@
         },
         "data_description": {
           "emergency_entity": "Z. B. Rauchmelder. Höchste Priorität: überschreibt Alarme, Handbetrieb und Hauptschalter für alle Rollläden. Markisen fahren ein.",
-          "emergency_level": "100 % = ganz offen (Fluchtweg)."
+          "emergency_level": "100 % = ganz offen (Fluchtweg).",
+          "frost_temp_entity": "Außentemperatur für Frostschutz und Frostsperre (Sensor oder Wetter-Entität).",
+          "frost_protect_below": "Darunter gilt der Frost-Alarm wie über den Frost-Auslöser: Rollläden mit Alarm Frost fahren abends auf die Frost-Höhe, Rollläden mit Frost-Öffnungshöhe öffnen morgens nur so weit. Aus erst wieder 1 °C darüber. −50 = aus.",
+          "frost_lock_below": "Darunter fahren Rollläden mit „Frostsperre“ gar nicht mehr automatisch (festgefroren). Bedienung von Hand bleibt möglich. −50 = aus."
+        }
+      },
+      "roof_windows": {
+        "title": "Dachfenster",
+        "data": {
+          "roof_window_rain_entity": "Regensensor (Dachfenster)",
+          "roof_window_wind_entity": "Windsensor (Dachfenster)",
+          "roof_window_wind_speed": "Schließen ab Windgeschwindigkeit",
+          "roof_window_vent_level": "Lüftungshöhe",
+          "roof_window_auto_close_minutes": "Automatisch schließen nach",
+          "roof_window_close_time": "Abends schließen um",
+          "roof_window_wait_time": "Fahrzeit / Wartezeit",
+          "roof_window_position_tolerance": "Positionstoleranz"
+        },
+        "data_description": {
+          "roof_window_rain_entity": "An/Regen oder Regenmenge > 0 → Dachfenster schließen – auch bei Handbetrieb und ausgeschaltetem Hauptschalter.",
+          "roof_window_wind_entity": "Schalter/Binärsensor (an = Wind) oder Windgeschwindigkeit in km/h.",
+          "roof_window_vent_level": "Der Lüften-Knopf öffnet die Dachfenster so weit. Bei Regen oder Wind nicht.",
+          "roof_window_auto_close_minutes": "Wenn ein Dachfenster so lange offen ist. 0 = aus.",
+          "roof_window_close_time": "Schließt offene Dachfenster zu dieser Uhrzeit. 00:00 = aus.",
+          "roof_window_wait_time": "Mindestens die Fahrzeit des Dachfensters."
         }
       },
       "behaviour": {
@@ -410,7 +438,7 @@
           }
         },
         "stages": {
-          "title": "Schließstufen",
+          "title": "Öffnungs- & Schließstufen",
           "data": {
             "close1_entity": "Stufe 1: auch schließen wenn an",
             "close1_from": "Stufe 1 per Entität frühestens ab",
@@ -421,15 +449,53 @@
             "close2_lux_entity": "Stufe 2: Helligkeitssensor",
             "close2_lux_minutes": "Stufe 2: so lange darunter",
             "close2_entity": "Stufe 2 auch wenn an",
-            "close2_from": "Stufe 2 frühestens ab"
+            "close2_from": "Stufe 2 ab Uhrzeit",
+            "close2_logic": "Stufe 2: Verknüpfung der Auslöser",
+            "open2_enabled": "Zweite Öffnungsstufe (morgens)",
+            "open1_level": "Öffnungsstufe 1: Höhe",
+            "open2_lux": "Ganz öffnen bei Helligkeit über",
+            "open2_lux_entity": "Öffnungsstufe 2: Helligkeitssensor",
+            "open2_lux_minutes": "Öffnungsstufe 2: so lange darüber",
+            "open2_entity": "Ganz öffnen wenn an",
+            "open2_from": "Ganz öffnen ab Uhrzeit",
+            "open2_logic": "Öffnungsstufe 2: Verknüpfung"
           },
           "data_description": {
             "close1_entity": "Z. B. Licht an. Schließt zusätzlich zur Zeit-/Helligkeitsautomatik.",
-            "close2_enabled": "Fährt nach Stufe 1 auf eine zweite Höhe/Lamellenstellung – nur bei Automatik an, ohne Sperre und mit geschlossenem Fenster.",
+            "close2_enabled": "Fährt nach dem vollständigen Schließen (Stufe 1) auf eine zweite Höhe/Lamellenstellung – nur bei Automatik an, ohne Sperre und mit geschlossenem Fenster.",
             "close2_tilt": "−1 = nicht verstellen.",
             "close2_lux": "0 = nicht über Helligkeit.",
             "close2_lux_entity": "Leer = globaler Helligkeitssensor.",
-            "close2_from": "00:00 = keine Uhrzeit."
+            "close2_from": "Auslöser Uhrzeit. 00:00 = kein Zeit-Auslöser.",
+            "close2_logic": "UND: alle eingestellten Auslöser (Helligkeit, Uhrzeit, Entität) müssen zutreffen · ODER: einer reicht. Ohne Auslöser fährt Stufe 2 nie.",
+            "open2_enabled": "Morgens erst nur auf eine Teilhöhe, später ganz öffnen – per Helligkeit, Uhrzeit oder Entität. Ohne Auslöser wird gleich ganz geöffnet.",
+            "open2_lux": "0 = nicht über Helligkeit.",
+            "open2_lux_entity": "Leer = globaler Helligkeitssensor.",
+            "open2_from": "00:00 = kein Zeit-Auslöser."
+          }
+        },
+        "positions": {
+          "title": "Positionen, Frost & Insekten",
+          "data": {
+            "privacy_level": "Sichtschutz-Höhe",
+            "my_level": "My-Position",
+            "frost_open_level": "Bei Frost nur öffnen bis",
+            "frost_lock": "Frostsperre",
+            "insect_enabled": "Insektenschutz",
+            "insect_from": "Insektenschutz ab",
+            "insect_to": "Insektenschutz bis",
+            "insect_temp_entity": "Insektenschutz: Temperatursensor",
+            "insect_min_temp": "Insektenschutz erst ab",
+            "insect_entity": "Insektenschutz nur wenn an"
+          },
+          "data_description": {
+            "privacy_level": "Knopf und Dienst „Sichtschutz“ – gehalten bis zum nächsten Zeitereignis.",
+            "my_level": "Lieblingshöhe für Knopf und Dienst „My-Position“ – gehalten bis zum nächsten Zeitereignis.",
+            "frost_open_level": "Solange Frost aktiv ist (Frost-Auslöser oder Temperatur), öffnet die Automatik nur bis zu dieser Höhe. −1 = aus.",
+            "frost_lock": "Unter der Frostsperre-Temperatur (Einstellungen → Alarme) fährt dieser Rollladen gar nicht automatisch – schützt festgefrorene Panzer und Motoren.",
+            "insect_enabled": "Einmal am Tag kurz ganz hoch und zurück auf die vorige Position (mit Lamellen) – vertreibt Insekten aus dem Rollladenkasten. Entfällt, wenn der Rollladen an dem Tag schon ganz oben war. Wartet bei offenem Fenster, Sperre, Alarm, Frost oder Automatik aus.",
+            "insect_temp_entity": "Leer = ohne Temperatur.",
+            "insect_entity": "Optionale Bedingung, z. B. ein Schalter „Sommer“."
           }
         },
         "extra": {
@@ -582,7 +648,8 @@
       "options": {
         "shutter": "Rollladen / Jalousie",
         "awning": "Markise",
-        "garage": "Garagentor / Tor"
+        "garage": "Garagentor / Tor",
+        "roof_window": "Dachfenster"
       }
     },
     "window_profile": {
@@ -646,6 +713,18 @@
         "lt": "kleiner als",
         "eq": "gleich",
         "ne": "ungleich"
+      }
+    },
+    "close2_logic": {
+      "options": {
+        "and": "Alle erfüllt (UND)",
+        "or": "Eine erfüllt (ODER)"
+      }
+    },
+    "open2_logic": {
+      "options": {
+        "and": "Alle erfüllt (UND)",
+        "or": "Eine erfüllt (ODER)"
       }
     },
     "garage_open_mode": {
@@ -725,7 +804,12 @@
           "rain": "Regenalarm",
           "wind1": "Windalarm 1",
           "wind2": "Windalarm 2",
-          "frost": "Frostschutz"
+          "frost": "Frostschutz",
+          "open_partly": "Teilweise geöffnet",
+          "insect": "Insektenschutz",
+          "privacy": "Sichtschutz",
+          "my_position": "My-Position",
+          "frost_lock": "Frostsperre"
         }
       },
       "next_up": {
@@ -792,6 +876,12 @@
       "vent": {
         "name": "Lüften"
       },
+      "privacy": {
+        "name": "Sichtschutz"
+      },
+      "my_position": {
+        "name": "My-Position"
+      },
       "auto_all": {
         "name": "Alle: Automatik fortsetzen"
       },
@@ -853,7 +943,7 @@
         },
         "device_type": {
           "name": "Gerätetyp",
-          "description": "shutter, awning oder garage – Markisen und Garagentore: immer alle des Typs"
+          "description": "shutter, awning, garage oder roof_window – Markisen, Garagentore und Dachfenster: immer alle des Typs"
         }
       }
     },
@@ -878,6 +968,34 @@
         "entity_id": {
           "name": "Rollläden",
           "description": "Cover-Entitäten"
+        }
+      }
+    },
+    "privacy": {
+      "name": "Sichtschutz",
+      "description": "Fährt auf die Sichtschutz-Höhe und hält sie bis zum nächsten Zeitereignis.",
+      "fields": {
+        "entity_id": {
+          "name": "Rollläden",
+          "description": "Cover-Entitäten"
+        },
+        "override_lockout": {
+          "name": "Aussperrschutz übergehen",
+          "description": "Nur nach Rückfrage: auch bei offener Tür herunterfahren."
+        }
+      }
+    },
+    "my_position": {
+      "name": "My-Position",
+      "description": "Fährt auf die My-Position und hält sie bis zum nächsten Zeitereignis.",
+      "fields": {
+        "entity_id": {
+          "name": "Rollläden",
+          "description": "Cover-Entitäten"
+        },
+        "override_lockout": {
+          "name": "Aussperrschutz übergehen",
+          "description": "Nur nach Rückfrage: auch bei offener Tür herunterfahren."
         }
       }
     },

@@ -70,6 +70,9 @@ class ShutterHub:
         self.forecast: dict[str, Any] = {"max": None, "condition": None}
         self.emergency_active = False
         self.awning_retracted_on: date | None = None
+        # Frost by temperature (with 1 °C hysteresis): frost alarm and frost lock.
+        self.frost_by_temp = False
+        self.frost_locked = False
 
     # ------------------------------------------------------------------ setup
 
@@ -103,6 +106,7 @@ class ShutterHub:
 
     async def _async_start(self) -> None:
         self.started = True
+        self._update_frost_temp()
         self._read_alarms()
         for ctrl in self.shutters.values():
             ctrl.async_start()
@@ -176,6 +180,19 @@ class ShutterHub:
             # The weather integration may not be ready right after a restart – try again shortly.
             self._unsubs.append(async_call_later(self.hass, 90, self._refresh_forecast))
         alarm_entities = [e for a in ALARMS if (e := self.options.get(f"alarm_{a}_entity"))]
+        if frost_temp := self.options.get("frost_temp_entity"):
+            alarm_entities.append(frost_temp)
+        roof_entities = [
+            e for e in (self.options.get("roof_window_rain_entity"), self.options.get("roof_window_wind_entity")) if e
+        ]
+        if roof_entities:
+            self._unsubs.append(
+                async_track_state_change_event(self.hass, roof_entities, self._on_roof_weather)
+            )
+        if (t := logic.parse_time(self.options.get("roof_window_close_time"))) and (t.hour or t.minute):
+            self._unsubs.append(
+                async_track_time_change(self.hass, self._on_roof_close_time, hour=t.hour, minute=t.minute, second=0)
+            )
         if alarm_entities:
             self._unsubs.append(
                 async_track_state_change_event(self.hass, alarm_entities, self._on_alarm_change)
@@ -361,7 +378,7 @@ class ShutterHub:
         # Assign stagger index per (direction, mode) group in configured order.
         groups: dict[tuple[str, str], int] = {}
         for ctrl in self.shutters.values():
-            if ctrl.device_type == "garage":
+            if ctrl.device_type in ("garage", "roof_window"):
                 continue
             plan = ctrl.plan_day(today, events)
             for direction, moment in (("up", plan.open), ("down", plan.close)):
@@ -433,8 +450,12 @@ class ShutterHub:
             if ctrl.device_type == "garage":
                 await ctrl.async_check_garage()
                 continue
+            if ctrl.device_type == "roof_window":
+                await ctrl.async_check_roof()
+                continue
             await ctrl.async_evaluate_sun()
             await ctrl.async_check_stages()
+            await ctrl.async_check_insect()
 
     @callback
     def _on_weather_change(self, _event: Event[EventStateChangedData]) -> None:
@@ -556,6 +577,43 @@ class ShutterHub:
         for ctrl in self.garages():
             self.hass.async_create_task(ctrl.async_garage_close("garage_presence"))
 
+    # ------------------------------------------------------------- roof windows
+
+    def roof_guard(self) -> str | None:
+        """Why roof windows must be closed right now: rain or wind (None = fine)."""
+        rain = self.options.get("roof_window_rain_entity")
+        if rain:
+            state = self.hass.states.get(rain)
+            value = state_number(state)
+            if state is not None and (
+                (state.domain == "sensor" and value is not None and value > 0)
+                or (state.domain != "sensor" and state_is_on(state))
+            ):
+                return "rain"
+        wind = self.options.get("roof_window_wind_entity")
+        if wind:
+            state = self.hass.states.get(wind)
+            value = state_number(state)
+            if state is not None and (
+                (state.domain == "sensor" and value is not None and value >= float(self.options["roof_window_wind_speed"]))
+                or (state.domain != "sensor" and state_is_on(state))
+            ):
+                return "wind"
+        return None
+
+    def roof_windows(self) -> list[ShutterController]:
+        """All roof window controllers."""
+        return [c for c in self.shutters.values() if c.device_type == "roof_window"]
+
+    @callback
+    def _on_roof_weather(self, _event: Event[EventStateChangedData]) -> None:
+        for ctrl in self.roof_windows():
+            self.hass.async_create_task(ctrl.async_check_roof())
+
+    async def _on_roof_close_time(self, _now: datetime) -> None:
+        for index, ctrl in enumerate(self.roof_windows()):
+            self._later(index * float(self.options.get("command_gap", 0) or 0), _bind_async(ctrl.async_roof_close, "roof_close_time"))
+
     def garages(self) -> list[ShutterController]:
         """All garage door controllers."""
         return [c for c in self.shutters.values() if c.device_type == "garage"]
@@ -644,18 +702,37 @@ class ShutterHub:
         self.async_update()
 
     def _alarm_state(self, alarm: str) -> bool:
+        if alarm == "frost" and self.frost_by_temp:
+            return True
         return self._entity_on(f"alarm_{alarm}_entity")
+
+    def frost_temperature(self) -> float | None:
+        """Outside temperature for frost protection / frost lock."""
+        entity_id = self.options.get("frost_temp_entity")
+        return state_number(self.hass.states.get(entity_id)) if entity_id else None
+
+    def _update_frost_temp(self) -> bool:
+        """Re-evaluate frost by temperature; True when the frost lock changed."""
+        temp = self.frost_temperature()
+        self.frost_by_temp = logic.below_limit(
+            self.frost_by_temp, temp, float(self.options.get("frost_protect_below", -50))
+        )
+        locked = logic.below_limit(self.frost_locked, temp, float(self.options.get("frost_lock_below", -50)))
+        changed = locked != self.frost_locked
+        self.frost_locked = locked
+        return changed
 
     def _read_alarms(self) -> None:
         for alarm in ALARMS:
             self.alarms_active[alarm] = self._alarm_state(alarm)
 
     @callback
-    def _on_alarm_change(self, event: Event[EventStateChangedData]) -> None:
-        entity_id = event.data["entity_id"]
+    def _on_alarm_change(self, _event: Event[EventStateChangedData]) -> None:
+        if self._update_frost_temp():
+            _LOGGER.info("Frost lock %s", "active" if self.frost_locked else "cleared")
+            for ctrl in self.shutters.values():
+                self.hass.async_create_task(ctrl.async_frost_lock_changed(self.frost_locked))
         for alarm in ALARMS:
-            if self.options.get(f"alarm_{alarm}_entity") != entity_id:
-                continue
             new = self._alarm_state(alarm)
             if new == self.alarms_active[alarm]:
                 continue
@@ -754,6 +831,9 @@ class ShutterHub:
             "master": self.active,
             "emergency": self.emergency_active,
             "awning_guard": self.awning_guard(),
+            "roof_guard": self.roof_guard(),
+            "frost_locked": self.frost_locked,
+            "frost_temp": self.frost_temperature(),
         }
 
     # ------------------------------------------------------- master switch

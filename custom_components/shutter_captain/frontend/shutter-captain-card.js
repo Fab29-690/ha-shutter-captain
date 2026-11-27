@@ -11,7 +11,7 @@
  *   color / background / text_color: amber | #rrggbb
  *   font: rounded           # theme | system | rounded | serif | mono | condensed
  *   background_image: /local/garten.jpg   image_dim: 30
- *   show_status_chips, show_header_controls, show_times, show_automation, show_slider,
+ *   show_status_chips, show_header_controls, show_times, show_automation, show_slider, show_positions,
  *   show_vacation, show_auto_mode, show_manual_mode: true/false
  *
  * The card adapts to its own width (container queries), so it fits any column, phone or tablet.
@@ -27,7 +27,7 @@ const SINGLE_OVERRIDES = { show_header_controls: false, show_status_chips: false
 const CARD_DEFAULTS = {
   title: "", layout: "grid", entities: [], all_shutters: false, shape: "rounded", color: "", background: "",
   text_color: "", font: "theme", background_image: "", image_dim: 30,
-  show_status_chips: true, show_header_controls: true, show_times: true, show_automation: true, show_slider: true,
+  show_status_chips: true, show_header_controls: true, show_times: true, show_automation: true, show_slider: true, show_positions: true,
   show_vacation: false, show_auto_mode: false, show_manual_mode: false,
 };
 
@@ -45,7 +45,8 @@ const TXT = {
     st_manual: "{n} manuell", st_alarm: "{n} Alarm",
     m_vacation: "Urlaub", m_auto: "Automatik", m_manual: "Manuell",
     auto_chip: "Automatik",
-    st_extended: "Ausgefahren", st_retracted: "Eingefahren", st_open: "Offen", st_closed: "Geschlossen",
+    st_extended: "Ausgefahren", st_retracted: "Eingefahren", lbl_open: "Offen", lbl_closed: "Geschlossen",
+    privacy: "Sichtschutz", my_position: "My-Position",
     single_name: "Shutter Captain – Rollladen",
     single_description: "Ein einzelner Rollladen – ideal für Abschnitte.",
     pick_one: "Rollladen oder Gruppe",
@@ -66,7 +67,8 @@ const TXT = {
     st_manual: "{n} manual", st_alarm: "{n} alarm",
     m_vacation: "Vacation", m_auto: "Automatic", m_manual: "Manual",
     auto_chip: "Automatic",
-    st_extended: "Extended", st_retracted: "Retracted", st_open: "Open", st_closed: "Closed",
+    st_extended: "Extended", st_retracted: "Retracted", lbl_open: "Open", lbl_closed: "Closed",
+    privacy: "Privacy", my_position: "My position",
     single_name: "Shutter Captain – shutter",
     single_description: "A single shutter – ideal for sections.",
     pick_one: "Shutter or group",
@@ -80,6 +82,7 @@ const STATE_COLOR = {
   up: "#f2a900", down: "#5c6bc0", intermediate: "#7986cb", sun_protect: "#ff8f00", heat_protect: "#e65100",
   manual: "#8e24aa", paused: "#78909c", window_open: "#00897b", window_locked: "#00695c",
   emergency: "#b71c1c", fire: "#d32f2f", rain: "#1e88e5", wind1: "#26a69a", wind2: "#00796b", frost: "#29b6f6", none: "#9e9e9e",
+  frost_lock: "#0277bd", open_partly: "#ffca28", insect: "#7cb342", privacy: "#6d4c41", my_position: "#ab47bc",
 };
 
 const FONTS = {
@@ -271,8 +274,8 @@ const CARD_CSS = SHARED_CSS + `
   .times span { display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; }
   .times b { color: var(--primary-text-color); font-weight: 500; }
   .times small { font-size: 10px; color: var(--sc-muted); margin-left: 2px; }
-  .row { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; }
-  .row input[type=range] { flex: 1; min-width: 60px; accent-color: var(--sc-color); }
+  .row { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .row input[type=range] { flex: 1 1 110px; min-width: 60px; accent-color: var(--sc-color); }
   .chips { grid-column: 1 / -1; display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
   .am { display: inline-flex; padding: 2px; border-radius: 999px; background: var(--sc-chip); }
   .am button { border: 0; background: transparent; color: inherit; font: inherit; font-size: 11px; padding: 3px 10px; border-radius: 999px; cursor: pointer; }
@@ -294,6 +297,10 @@ const CARD_CSS = SHARED_CSS + `
   .win.t-garage { background: linear-gradient(180deg, #263238, #37474f) !important; }
   .win.t-garage .slats { background: repeating-linear-gradient(180deg, #eceff1 0 9px, #b0bec5 9px 11px); }
   .win.t-garage .stars, .win.t-garage .wx { display: none; }
+  .win.t-roof { border-radius: 8px 8px 3px 3px; transform: perspective(160px) rotateX(12deg); }
+  .win.t-roof .mullion { display: none; }
+  .win.t-roof .slats { background: linear-gradient(180deg, rgba(187,222,251,.6), rgba(100,181,246,.4)); border-bottom: 3px solid #546e7a; }
+  .win.t-roof .slats::after { display: none; }
   .cchip .cn { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
   .cchip .cn b { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .cchip .cn span { font-size: 11px; color: var(--sc-color); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -524,12 +531,12 @@ class ShutterCaptainCard extends HTMLElement {
     const stats = this.shadowRoot.getElementById("stats");
     if (!c.show_status_chips) { stats.hidden = true; return; }
     const defs = [
-      ["st_open", "mdi:window-shutter-open", "#f2a900", (s) => s.state === "up"],
+      ["st_open", "mdi:window-shutter-open", "#f2a900", (s) => ["up", "open_partly"].includes(s.state)],
       ["st_closed", "mdi:window-shutter", "#5c6bc0", (s) => ["down", "intermediate"].includes(s.state)],
       ["st_sun", "mdi:weather-sunny", "#ff8f00", (s) => ["sun_protect", "heat_protect"].includes(s.state)],
       ["st_window", "mdi:window-open-variant", "#00897b", (s) => (s.attributes.window || "closed") !== "closed"],
       ["st_manual", "mdi:hand-back-right", "#8e24aa", (s) => ["manual", "paused"].includes(s.state)],
-      ["st_alarm", "mdi:alert", "#d32f2f", (s) => ["emergency", "fire", "rain", "wind1", "wind2", "frost"].includes(s.state)],
+      ["st_alarm", "mdi:alert", "#d32f2f", (s) => ["emergency", "fire", "rain", "wind1", "wind2", "frost", "frost_lock"].includes(s.state)],
     ];
     const html = defs.map(([key, icon, color, fn]) => {
       const n = count(fn);
@@ -577,6 +584,8 @@ class ShutterCaptainCard extends HTMLElement {
         <button class="btn" data-act="open_cover"><ha-icon icon="mdi:arrow-up"></ha-icon></button>
         <button class="btn" data-act="stop_cover"><ha-icon icon="mdi:stop"></ha-icon></button>
         <button class="btn" data-act="close_cover"><ha-icon icon="mdi:arrow-down"></ha-icon></button>
+        <button class="btn pos" data-pos="privacy" hidden><ha-icon icon="mdi:eye-off-outline"></ha-icon></button>
+        <button class="btn pos" data-pos="my_position" hidden><ha-icon icon="mdi:star-outline"></ha-icon></button>
         <input type="range" min="0" max="100" step="1">
       </div>
       <div class="chips"></div>`;
@@ -606,6 +615,8 @@ class ShutterCaptainCard extends HTMLElement {
         else this._hass.callService("cover", act.dataset.act, { entity_id: id });
         return;
       }
+      const posBtn = ev.target.closest("[data-pos]");
+      if (posBtn) { this._position(id, posBtn.dataset.pos); return; }
       const am = ev.target.closest("[data-am]");
       if (am) { this._hass.callService("switch", am.dataset.am === "on" ? "turn_on" : "turn_off", { entity_id: am.dataset.sw }); return; }
       const auto = ev.target.closest("[data-switch]");
@@ -631,6 +642,20 @@ class ShutterCaptainCard extends HTMLElement {
     // Confirmed: every shutter directly. Not confirmed: only the unlocked ones.
     const targets = ok ? this._members(ids) : this._members(ids).filter((id) => !locked.includes(id));
     if (targets.length) this._hass.callService("cover", "close_cover", { entity_id: targets });
+  }
+
+  /** Privacy / My position (Shutter Captain service); in front of an open door only after confirmation. */
+  _position(id, service) {
+    const st = statusByCover(this._hass)[id];
+    const a = st?.attributes;
+    if (!a) return;
+    const level = Number(service === "privacy" ? a.privacy_level : a.my_level);
+    let override = false;
+    if (typeof a.position === "number" && level < a.position - 2 && a.closing_locked) {
+      if (!confirm(tr(this._hass, "confirm_one").replace("{name}", friendly(this._hass, id)))) return;
+      override = true;
+    }
+    this._hass.callService(DOMAIN, service, { entity_id: id, override_lockout: override });
   }
 
   _moreInfo(entityId) {
@@ -674,7 +699,7 @@ class ShutterCaptainCard extends HTMLElement {
     if (!st || !avail) { label = tr(this._hass, "unavailable"); icon = "mdi:alert-circle-outline"; }
     else if (statusState) {
       label = this._hass.formatEntityState ? this._hass.formatEntityState(statusState) : autoState;
-      const own = { awning: { sun_protect: "st_extended", down: "st_retracted", up: "st_retracted" }, garage: { up: "st_open", down: "st_closed" } }[dtype]?.[autoState];
+      const own = { awning: { sun_protect: "st_extended", down: "st_retracted", up: "st_retracted" }, garage: { up: "lbl_open", down: "lbl_closed" }, roof_window: { up: "lbl_open", down: "lbl_closed" } }[dtype]?.[autoState];
       if (own) label = tr(this._hass, own);
       icon = statusState.attributes.icon || "mdi:window-shutter-auto";
       if (statusState.attributes.window && statusState.attributes.window !== "closed" && !["window_open", "window_locked"].includes(autoState)) {
@@ -693,6 +718,7 @@ class ShutterCaptainCard extends HTMLElement {
     const motion = motionOf(st?.state);
     win.classList.toggle("t-awning", dtype === "awning");
     win.classList.toggle("t-garage", dtype === "garage");
+    win.classList.toggle("t-roof", dtype === "roof_window");
     win.classList.toggle("moving-opening", motion === "opening");
     win.classList.toggle("moving-closing", motion === "closing");
     win.classList.toggle("sunny", autoState === "sun_protect" || autoState === "heat_protect");
@@ -710,11 +736,12 @@ class ShutterCaptainCard extends HTMLElement {
     el.querySelector(".name").textContent = st ? friendly(this._hass, id) : id;
     if (dtype === "awning" && ["up", "down", "sun_protect"].includes(autoState)) icon = autoState === "sun_protect" ? "mdi:awning" : "mdi:awning-outline";
     if (dtype === "garage") icon = autoState === "up" ? "mdi:garage-open-variant" : "mdi:garage-variant";
+    if (dtype === "roof_window") icon = autoState === "up" ? "mdi:window-open-variant" : "mdi:window-closed-variant";
     el.querySelector(".status ha-icon").setAttribute("icon", icon);
     el.querySelector(".status span").textContent = label;
     const times = el.querySelector(".times");
     const a = statusState?.attributes;
-    times.hidden = !c.show_times || !a || dtype === "garage";
+    times.hidden = !c.show_times || !a || dtype === "garage" || dtype === "roof_window";
     if (a) times.innerHTML = `<span><ha-icon icon="mdi:arrow-up"></ha-icon><b>${this._fmt(a.next_open)}</b></span><span><ha-icon icon="mdi:arrow-down"></ha-icon><b>${this._fmt(a.next_close)}</b></span>`;
     const coverT = dtype === "awning" ? pos : pos === null ? null : 100 - pos;
     el.querySelector(".slats").style.height = coverT === null ? "0" : `calc(${coverT}% - ${coverT * 0.06}px)`;
@@ -722,6 +749,12 @@ class ShutterCaptainCard extends HTMLElement {
 
     const row = el.querySelector(".row");
     row.querySelectorAll("button").forEach((b) => { b.disabled = !avail; });
+    // Privacy / My position: only for Shutter Captain shutters and awnings, if enabled in the card.
+    const posOk = !!a && c.show_positions !== false && ["shutter", "awning"].includes(dtype) && !isGroup;
+    row.querySelectorAll("[data-pos]").forEach((b) => {
+      b.hidden = !posOk;
+      if (posOk) b.title = `${tr(this._hass, b.dataset.pos)} · ${b.dataset.pos === "privacy" ? a.privacy_level : a.my_level}%`;
+    });
     const range = row.querySelector("input");
     range.hidden = !c.show_slider;
     range.disabled = !avail || pos === null;
@@ -729,7 +762,7 @@ class ShutterCaptainCard extends HTMLElement {
 
     const chips = el.querySelector(".chips");
     const showChips = c.show_automation && statusState;
-    const garageOnly = dtype === "garage";
+    const garageOnly = dtype === "garage" || dtype === "roof_window";
     chips.hidden = !showChips;
     if (showChips) {
       const autoSw = this._autoSwitch(statusState.entity_id, "automation");
@@ -761,7 +794,7 @@ const ED_TXT = {
     bg_image: "Hintergrundbild", bg_upload: "Bild hochladen", bg_remove: "Entfernen", bg_url: "oder Adresse: /local/… oder https://…", bg_dim: "Abdunkeln",
     uploading: "Lade hoch …",
     show_status_chips: "Status-Chips (z. B. „3 offen“)", show_header_controls: "Auf/Stopp/Ab für alle",
-    show_times: "Nächste Zeiten", show_automation: "Automatik-Schalter je Rollladen", show_slider: "Schieberegler",
+    show_times: "Nächste Zeiten", show_automation: "Automatik-Schalter je Rollladen", show_slider: "Schieberegler", show_positions: "Knöpfe Sichtschutz / My-Position",
     show_vacation: "Urlaub", show_auto_mode: "Automatik (alle fortsetzen)", show_manual_mode: "Manuell (alle pausieren)",
   },
   en: {
@@ -779,7 +812,7 @@ const ED_TXT = {
     bg_image: "Background image", bg_upload: "Upload image", bg_remove: "Remove", bg_url: "or address: /local/… or https://…", bg_dim: "Darken",
     uploading: "Uploading …",
     show_status_chips: "Status chips (e.g. “3 open”)", show_header_controls: "Up/stop/down for all",
-    show_times: "Next times", show_automation: "Automation switches per shutter", show_slider: "Slider",
+    show_times: "Next times", show_automation: "Automation switches per shutter", show_slider: "Slider", show_positions: "Privacy / My position buttons",
     show_vacation: "Vacation", show_auto_mode: "Automatic (resume all)", show_manual_mode: "Manual (pause all)",
   },
 };
@@ -960,7 +993,7 @@ class ShutterCaptainCardEditor extends HTMLElement {
     this.shadowRoot.innerHTML = `<style>${EDITOR_CSS}</style><div class="ed">
       ${sec("shutters", "mdi:window-shutter", this._t("sec_shutters"), shuttersBody)}
       ${sec("look", "mdi:palette-outline", this._t("sec_look"), lookBody)}
-      ${sec("show", "mdi:eye-outline", this._t("sec_show"), ["show_status_chips", "show_header_controls", "show_times", "show_automation", "show_slider"].map(toggle).join(""))}
+      ${sec("show", "mdi:eye-outline", this._t("sec_show"), ["show_status_chips", "show_header_controls", "show_times", "show_automation", "show_slider", "show_positions"].map(toggle).join(""))}
       ${sec("modes", "mdi:toggle-switch-outline", this._t("sec_modes"), ["show_vacation", "show_auto_mode", "show_manual_mode"].map(toggle).join(""))}
     </div>`;
     this._wire();

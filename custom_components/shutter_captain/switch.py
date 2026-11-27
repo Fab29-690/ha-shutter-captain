@@ -39,7 +39,7 @@ async def async_setup_entry(
     for subentry_id, ctrl in hub.shutters.items():
         async_add_entities(
             [ShutterAutomationSwitch(ctrl)]
-            + ([] if ctrl.device_type == "garage" else [ShutterAutoSwitch(ctrl, kind) for kind in ("up", "down", "sun")]),
+            + ([] if ctrl.device_type in ("garage", "roof_window") else [ShutterAutoSwitch(ctrl, kind) for kind in ("up", "down", "sun")]),
             config_subentry_id=subentry_id,
         )
 

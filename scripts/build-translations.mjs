@@ -92,6 +92,17 @@ const GLOBAL = {
   accent: ["Akzentfarbe", "Accent colour", "Farbe für Panel und Dashboard-Karte. „Home Assistant“ = Farbe deines Themes.", "Colour for panel and dashboard card. 'Home Assistant' = your theme colour."],
   forecast_entity: ["Vorhersage-Entität", "Forecast entity", "Wetter-Entität mit Tagesvorhersage für „Nur wenn heute erwartet ab“. Leer = Wetter-Entität oben.", "Weather entity with a daily forecast for 'Only if today's forecast reaches'. Empty = weather entity above."],
   weather_entity: ["Wetter-Entität", "Weather entity", "Zeigt Regen, Schnee und Wolken im Fenster von Panel und Karte.", "Shows rain, snow and clouds in the window of panel and card."],
+  frost_temp_entity: ["Frost: Temperatursensor", "Frost: temperature sensor", "Außentemperatur für Frostschutz und Frostsperre (Sensor oder Wetter-Entität).", "Outside temperature for frost protection and frost lock (sensor or weather entity)."],
+  frost_protect_below: ["Frostschutz wenn kälter als", "Frost protection when colder than", "Darunter gilt der Frost-Alarm wie über den Frost-Auslöser: Rollläden mit Alarm Frost fahren abends auf die Frost-Höhe, Rollläden mit Frost-Öffnungshöhe öffnen morgens nur so weit. Aus erst wieder 1 °C darüber. −50 = aus.", "Below this the frost alarm is active, like with the frost trigger: shutters with the frost alarm close to the frost position, shutters with a frost opening position only open that far. Off again 1 °C above. −50 = off."],
+  frost_lock_below: ["Frostsperre wenn kälter als", "Frost lock when colder than", "Darunter fahren Rollläden mit „Frostsperre“ gar nicht mehr automatisch (festgefroren). Bedienung von Hand bleibt möglich. −50 = aus.", "Below this, shutters with 'Frost lock' are no longer moved automatically (frozen). Manual control still works. −50 = off."],
+  roof_window_rain_entity: ["Regensensor (Dachfenster)", "Rain sensor (roof windows)", "An/Regen oder Regenmenge > 0 → Dachfenster schließen – auch bei Handbetrieb und ausgeschaltetem Hauptschalter.", "On/rain or rain amount > 0 → roof windows close – also in manual mode and with the main switch off."],
+  roof_window_wind_entity: ["Windsensor (Dachfenster)", "Wind sensor (roof windows)", "Schalter/Binärsensor (an = Wind) oder Windgeschwindigkeit in km/h.", "Switch/binary sensor (on = wind) or wind speed in km/h."],
+  roof_window_wind_speed: ["Schließen ab Windgeschwindigkeit", "Close from wind speed"],
+  roof_window_vent_level: ["Lüftungshöhe", "Vent position", "Der Lüften-Knopf öffnet die Dachfenster so weit. Bei Regen oder Wind nicht.", "The vent button opens the roof windows this far. Not in rain or wind."],
+  roof_window_auto_close_minutes: ["Automatisch schließen nach", "Close automatically after", "Wenn ein Dachfenster so lange offen ist. 0 = aus.", "When a roof window has been open this long. 0 = off."],
+  roof_window_close_time: ["Abends schließen um", "Close in the evening at", "Schließt offene Dachfenster zu dieser Uhrzeit. 00:00 = aus.", "Closes open roof windows at this time. 00:00 = off."],
+  roof_window_wait_time: ["Fahrzeit / Wartezeit", "Travel / wait time", "Mindestens die Fahrzeit des Dachfensters.", "At least the travel time of the roof window."],
+  roof_window_position_tolerance: ["Positionstoleranz", "Position tolerance"],
 };
 const ALARM_NAMES = { fire: ["Feuer", "Fire"], rain: ["Regen", "Rain"], wind1: ["Wind Stufe 1", "Wind level 1"], wind2: ["Wind Stufe 2", "Wind level 2"], frost: ["Frost", "Frost"] };
 for (const [a, [de, en]] of Object.entries(ALARM_NAMES)) {
@@ -140,14 +151,33 @@ const SHUTTER = {
   late_close: ["Spät schließen", "Late close"],
   close1_entity: ["Stufe 1: auch schließen wenn an", "Stage 1: also close when on", "Z. B. Licht an. Schließt zusätzlich zur Zeit-/Helligkeitsautomatik.", "E.g. a light turning on. Closes in addition to the time/brightness automation."],
   close1_from: ["Stufe 1 per Entität frühestens ab", "Stage 1 by entity not before"],
-  close2_enabled: ["Zweite Schließstufe (Nacht)", "Second closing stage (night)", "Fährt nach Stufe 1 auf eine zweite Höhe/Lamellenstellung – nur bei Automatik an, ohne Sperre und mit geschlossenem Fenster.", "After stage 1 moves to a second position/slat angle – only with automation on, no lock and the window closed."],
+  close2_enabled: ["Zweite Schließstufe (Nacht)", "Second closing stage (night)", "Fährt nach dem vollständigen Schließen (Stufe 1) auf eine zweite Höhe/Lamellenstellung – nur bei Automatik an, ohne Sperre und mit geschlossenem Fenster.", "After a full close (stage 1) moves to a second position/slat angle – only with automation on, no lock and the window closed."],
   close2_level: ["Stufe 2: Höhe", "Stage 2: position"],
   close2_tilt: ["Stufe 2: Lamellenwinkel", "Stage 2: slat tilt", "−1 = nicht verstellen.", "−1 = do not change."],
   close2_lux: ["Stufe 2 bei Helligkeit unter", "Stage 2 when brightness below", "0 = nicht über Helligkeit.", "0 = not by brightness."],
   close2_lux_entity: ["Stufe 2: Helligkeitssensor", "Stage 2: brightness sensor", "Leer = globaler Helligkeitssensor.", "Empty = global brightness sensor."],
   close2_lux_minutes: ["Stufe 2: so lange darunter", "Stage 2: below for"],
   close2_entity: ["Stufe 2 auch wenn an", "Stage 2 also when on"],
-  close2_from: ["Stufe 2 frühestens ab", "Stage 2 not before", "00:00 = keine Uhrzeit.", "00:00 = no time limit."],
+  close2_from: ["Stufe 2 ab Uhrzeit", "Stage 2 from time", "Auslöser Uhrzeit. 00:00 = kein Zeit-Auslöser.", "Time trigger. 00:00 = no time trigger."],
+  close2_logic: ["Stufe 2: Verknüpfung der Auslöser", "Stage 2: combine triggers", "UND: alle eingestellten Auslöser (Helligkeit, Uhrzeit, Entität) müssen zutreffen · ODER: einer reicht. Ohne Auslöser fährt Stufe 2 nie.", "AND: all configured triggers (brightness, time, entity) must apply · OR: one is enough. Without a trigger stage 2 never runs."],
+  open2_enabled: ["Zweite Öffnungsstufe (morgens)", "Second opening stage (morning)", "Morgens erst nur auf eine Teilhöhe, später ganz öffnen – per Helligkeit, Uhrzeit oder Entität. Ohne Auslöser wird gleich ganz geöffnet.", "In the morning first only to a partial position, fully open later – by brightness, time or entity. Without a trigger it opens fully at once."],
+  open1_level: ["Öffnungsstufe 1: Höhe", "Opening stage 1: position"],
+  open2_lux: ["Ganz öffnen bei Helligkeit über", "Fully open when brightness above", "0 = nicht über Helligkeit.", "0 = not by brightness."],
+  open2_lux_entity: ["Öffnungsstufe 2: Helligkeitssensor", "Opening stage 2: brightness sensor", "Leer = globaler Helligkeitssensor.", "Empty = global brightness sensor."],
+  open2_lux_minutes: ["Öffnungsstufe 2: so lange darüber", "Opening stage 2: above for"],
+  open2_entity: ["Ganz öffnen wenn an", "Fully open when on"],
+  open2_from: ["Ganz öffnen ab Uhrzeit", "Fully open from time", "00:00 = kein Zeit-Auslöser.", "00:00 = no time trigger."],
+  open2_logic: ["Öffnungsstufe 2: Verknüpfung", "Opening stage 2: combine triggers"],
+  privacy_level: ["Sichtschutz-Höhe", "Privacy position", "Knopf und Dienst „Sichtschutz“ – gehalten bis zum nächsten Zeitereignis.", "Button and service 'Privacy' – held until the next scheduled event."],
+  my_level: ["My-Position", "My position", "Lieblingshöhe für Knopf und Dienst „My-Position“ – gehalten bis zum nächsten Zeitereignis.", "Favourite position for the 'My position' button and service – held until the next scheduled event."],
+  frost_open_level: ["Bei Frost nur öffnen bis", "On frost only open to", "Solange Frost aktiv ist (Frost-Auslöser oder Temperatur), öffnet die Automatik nur bis zu dieser Höhe. −1 = aus.", "While frost is active (frost trigger or temperature) the automation only opens up to this position. −1 = off."],
+  frost_lock: ["Frostsperre", "Frost lock", "Unter der Frostsperre-Temperatur (Einstellungen → Alarme) fährt dieser Rollladen gar nicht automatisch – schützt festgefrorene Panzer und Motoren.", "Below the frost lock temperature (Settings → Alarms) this shutter is not moved automatically at all – protects frozen curtains and motors."],
+  insect_enabled: ["Insektenschutz", "Insect protection", "Einmal am Tag kurz ganz hoch und zurück auf die vorige Position (mit Lamellen) – vertreibt Insekten aus dem Rollladenkasten. Entfällt, wenn der Rollladen an dem Tag schon ganz oben war. Wartet bei offenem Fenster, Sperre, Alarm, Frost oder Automatik aus.", "Once a day briefly fully up and back to the previous position (slats included) – drives insects out of the shutter box. Skipped when the shutter was fully up that day. Waits while the window is open, a lock, alarm or frost is active or the automation is off."],
+  insect_from: ["Insektenschutz ab", "Insect protection from"],
+  insect_to: ["Insektenschutz bis", "Insect protection until"],
+  insect_temp_entity: ["Insektenschutz: Temperatursensor", "Insect protection: temperature sensor", "Leer = ohne Temperatur.", "Empty = no temperature check."],
+  insect_min_temp: ["Insektenschutz erst ab", "Insect protection only from"],
+  insect_entity: ["Insektenschutz nur wenn an", "Insect protection only when on", "Optionale Bedingung, z. B. ein Schalter „Sommer“.", "Optional condition, e.g. a 'summer' switch."],
   garage_switch_entity: ["Tor-Schalter (Impuls)", "Door switch (impulse)", "Optional: Schalter, Taster oder Relais, der das Tor bewegt (z. B. Shelly mit Auto-Aus). Shutter Captain löst dann einen Impuls aus statt den Cover-Befehl; die Position kommt weiter vom Cover oben.", "Optional: switch, button or relay that moves the door (e.g. Shelly with auto-off). Shutter Captain then sends an impulse instead of the cover command; the position still comes from the cover above."],
   device_type: ["Gerät", "Device", "Markise: Wind- und Regenalarm fahren sie in die Geschlossen-Position (eingefahren).", "Awning: wind and rain alarms move it to the closed (retracted) position."],
   open_tilt: ["Lamellenwinkel offen", "Slat tilt open", "−1 = nicht verstellen.", "−1 = do not change."],
@@ -194,7 +224,7 @@ const SELECTORS = {
   manual_round: { 0: ["Nicht runden", "No rounding"], 5: ["5 %", "5%"], 10: ["10 %", "10%"] },
   area: { auto: ["Automatisch", "Automatic"], living: ["Wohnbereich", "Living area"], sleep: ["Schlafbereich", "Sleeping area"], children: ["Kinderbereich", "Children's area"], none: ["Keiner", "None"] },
   accent: { ha: ["Home Assistant", "Home Assistant"], amber: ["Bernstein", "Amber"], indigo: ["Indigo", "Indigo"], teal: ["Petrol", "Teal"], ocean: ["Ozean", "Ocean"], forest: ["Wald", "Forest"], rose: ["Rose", "Rose"] },
-  device_type: { shutter: ["Rollladen / Jalousie", "Shutter / blind"], awning: ["Markise", "Awning"], garage: ["Garagentor / Tor", "Garage door / gate"] },
+  device_type: { shutter: ["Rollladen / Jalousie", "Shutter / blind"], awning: ["Markise", "Awning"], garage: ["Garagentor / Tor", "Garage door / gate"], roof_window: ["Dachfenster", "Roof window"] },
   cond_mode: { off: ["Aus", "Off"], sun: ["Sonnenschutz nur wenn erfüllt", "Sun protection only when met"], half_close: ["Abends nur teilweise schließen", "Evening: close only partly"], no_close: ["Nicht automatisch schließen", "Don't close automatically"], no_open: ["Nicht automatisch öffnen", "Don't open automatically"] },
   garage_open_mode: { off: ["Aus", "Off"], trigger: ["Öffnen, wenn erfüllt", "Open when met"], allow: ["Öffnen nur erlaubt, wenn", "Opening only allowed while"] },
   garage_close_mode: { off: ["Aus", "Off"], trigger: ["Schließen, wenn erfüllt", "Close when met"], allow: ["Schließen nur erlaubt, wenn", "Closing only allowed while"] },
@@ -207,14 +237,15 @@ const SELECTORS = {
 const SECTION_TITLES = {
   area_living: ["Wohnbereich", "Living area"], area_sleep: ["Schlafbereich", "Sleeping area"], area_children: ["Kinderbereich", "Children's area"],
   astro: ["Astro & Versatz", "Astro & delays"], days: ["Arbeitstage, Feiertage, Urlaub", "Workdays, holidays, vacation"], seasons: ["Sommer & Weihnachten", "Summer & Christmas"],
-  brightness: ["Helligkeitssensor", "Brightness sensor"], special: ["Sonderzeiten", "Special times"], alarms: ["Alarme", "Alarms"], behaviour: ["Verhalten & Handbetrieb", "Behaviour & manual mode"], appearance: ["Darstellung", "Appearance"], awnings: ["Markisen", "Awnings"], garages: ["Garagentore", "Garage doors"],
-  main: ["Rollladen & Zeiten", "Shutter & schedule"], window: ["Fenster & Tür", "Window & door"], sun: ["Sonnenschutz", "Sun protection"], conditions: ["Eigene Bedingungen", "Own conditions"], stages: ["Schließstufen", "Closing stages"], extra: ["Extras & Alarme", "Extras & alarms"],
+  brightness: ["Helligkeitssensor", "Brightness sensor"], special: ["Sonderzeiten", "Special times"], alarms: ["Alarme", "Alarms"], behaviour: ["Verhalten & Handbetrieb", "Behaviour & manual mode"], appearance: ["Darstellung", "Appearance"], awnings: ["Markisen", "Awnings"], garages: ["Garagentore", "Garage doors"], roof_windows: ["Dachfenster", "Roof windows"],
+  main: ["Rollladen & Zeiten", "Shutter & schedule"], window: ["Fenster & Tür", "Window & door"], sun: ["Sonnenschutz", "Sun protection"], conditions: ["Eigene Bedingungen", "Own conditions"], stages: ["Öffnungs- & Schließstufen", "Opening & closing stages"], extra: ["Extras & Alarme", "Extras & alarms"], positions: ["Positionen, Frost & Insekten", "Positions, frost & insects"],
 };
 
 const STATES = {
   none: ["Unbekannt", "Unknown"], up: ["Offen", "Open"], down: ["Geschlossen", "Closed"], intermediate: ["Zwischenposition", "Intermediate"], sun_protect: ["Sonnenschutz", "Sun protection"],
   heat_protect: ["Hitzeschutz", "Heat protection"], manual: ["Handbetrieb", "Manual"], paused: ["Pausiert", "Paused"], window_open: ["Fenster offen", "Window open"], window_locked: ["Aussperrschutz", "Lockout"],
   emergency: ["Notfall", "Emergency"], fire: ["Feueralarm", "Fire alarm"], rain: ["Regenalarm", "Rain alarm"], wind1: ["Windalarm 1", "Wind alarm 1"], wind2: ["Windalarm 2", "Wind alarm 2"], frost: ["Frostschutz", "Frost protection"],
+  open_partly: ["Teilweise geöffnet", "Partly open"], insect: ["Insektenschutz", "Insect protection"], privacy: ["Sichtschutz", "Privacy"], my_position: ["My-Position", "My position"], frost_lock: ["Frostsperre", "Frost lock"],
 };
 
 const ENTITIES = {
@@ -229,7 +260,7 @@ const ENTITIES = {
     auto_living: { name: ["Automatik Wohnbereich", "Auto living area"] }, auto_sleep: { name: ["Automatik Schlafbereich", "Auto sleeping area"] }, auto_children: { name: ["Automatik Kinderbereich", "Auto children's area"] },
     automation: { name: ["Automatik", "Automatic"] }, auto_up: { name: ["Automatisch öffnen", "Open automatically"] }, auto_down: { name: ["Automatisch schließen", "Close automatically"] }, auto_sun: { name: ["Sonnenschutz", "Sun protection"] },
   },
-  button: { resume: { name: ["Automatik fortsetzen", "Resume automation"] }, vent: { name: ["Lüften", "Vent"] }, auto_all: { name: ["Alle: Automatik fortsetzen", "All: resume automation"] } },
+  button: { resume: { name: ["Automatik fortsetzen", "Resume automation"] }, vent: { name: ["Lüften", "Vent"] }, privacy: { name: ["Sichtschutz", "Privacy"] }, my_position: { name: ["My-Position", "My position"] }, auto_all: { name: ["Alle: Automatik fortsetzen", "All: resume automation"] } },
 };
 // Group covers are their own devices; the cover takes the device name (good for voice assistants).
 const DEVICES = {
@@ -260,7 +291,7 @@ function build(i) {
   };
 
   const optionSteps = {
-    init: { title: ["Shutter Captain – Einstellungen", "Shutter Captain – settings"][i], menu_options: Object.fromEntries(Object.entries(SECTION_TITLES).filter(([k]) => !["main", "window", "sun", "conditions", "stages", "extra"].includes(k)).map(([k, v]) => [k, v[i]])) },
+    init: { title: ["Shutter Captain – Einstellungen", "Shutter Captain – settings"][i], menu_options: Object.fromEntries(Object.entries(SECTION_TITLES).filter(([k]) => !["main", "window", "sun", "conditions", "stages", "extra", "positions"].includes(k)).map(([k, v]) => [k, v[i]])) },
   };
   for (const area of Object.keys(AREA_NAMES)) {
     const keys = Object.keys(AREA).map((k) => `${area}_${k}`);
@@ -272,7 +303,8 @@ function build(i) {
     seasons: ["summer_start", "summer_end", "xmas_start", "xmas_end"],
     brightness: ["brightness_entity", "brightness_close", "brightness_open", "brightness_delay", "brightness_open_from", "brightness_close_from"],
     special: ["late_close_time", "intermediate_close_time", "min_minutes_since_move", "random_offset", "random_only_vacation"],
-    alarms: ["emergency_entity", "emergency_level", ...Object.keys(GLOBAL).filter((k) => k.startsWith("alarm_"))],
+    alarms: ["emergency_entity", "emergency_level", "frost_temp_entity", "frost_protect_below", "frost_lock_below", ...Object.keys(GLOBAL).filter((k) => k.startsWith("alarm_"))],
+    roof_windows: ["roof_window_rain_entity", "roof_window_wind_entity", "roof_window_wind_speed", "roof_window_vent_level", "roof_window_auto_close_minutes", "roof_window_close_time", "roof_window_wait_time", "roof_window_position_tolerance"],
     behaviour: ["wait_time", "command_gap", "position_tolerance", "manual_round", "manual_reset", "manual_timeout"],
     appearance: ["accent", "weather_entity", "forecast_entity"],
     awnings: ["awning_wind_entity", "awning_wind_speed", "awning_rain_entity", "awning_temp_entity", "awning_frost_temp", "awning_min_temp", "awning_retract_time", "awning_sun_end_elevation", "awning_emergency_entities", "awning_emergency_alarms", "awning_wait_time", "awning_position_tolerance", "awning_manual_round", "awning_manual_reset", "awning_manual_timeout"],
@@ -285,7 +317,8 @@ function build(i) {
     window: ["window_profile", "window_entity", "tilt_entity", "window_action", "window_open_level", "window_tilt_level", "lockout", "vent_on_close", "drive_after_close", "window_open_delay", "window_close_delay", "vent_level"],
     sun: ["sun_mode", "sun_level", "sun_tilt", "azimuth", "azimuth_range", "out_temp_entity", "out_temp_setpoint", "out_temp_hyst", "in_temp_entity", "in_temp_setpoint", "in_temp_hyst", "light_entity", "light_setpoint", "light_hyst", "keep_sun", "sun_start_delay", "sun_end_delay", "sun_month_from", "sun_month_to", "forecast_temp", "weather_conditions", "heat_protection", "heat_temp"],
     conditions: ["cond_mode", "cond_logic", "cond1_entity", "cond1_op", "cond1_value", "cond2_entity", "cond2_op", "cond2_value", "cond_level"],
-    stages: ["close1_entity", "close1_from", "close2_enabled", "close2_level", "close2_tilt", "close2_lux", "close2_lux_entity", "close2_lux_minutes", "close2_entity", "close2_from"],
+    stages: ["close1_entity", "close1_from", "close2_enabled", "close2_level", "close2_tilt", "close2_lux", "close2_lux_entity", "close2_lux_minutes", "close2_entity", "close2_from", "close2_logic", "open2_enabled", "open1_level", "open2_lux", "open2_lux_entity", "open2_lux_minutes", "open2_entity", "open2_from", "open2_logic"],
+    positions: ["privacy_level", "my_level", "frost_open_level", "frost_lock", "insect_enabled", "insect_from", "insect_to", "insect_temp_entity", "insect_min_temp", "insect_entity"],
     extra: ["lamp_entity", "lamp_brightness", "late_close", "summer_no_close", "xmas", "xmas_level", "intermediate", "intermediate_level", "alarm_fire", "alarm_rain", "alarm_wind1", "alarm_wind2", "alarm_frost"],
   };
   const subSteps = {};
@@ -326,7 +359,7 @@ function build(i) {
       accent: sel(SELECTORS.accent),
       device_type: sel(SELECTORS.device_type), window_profile: sel(SELECTORS.window_profile), cond_mode: sel(SELECTORS.cond_mode), cond_logic: sel(SELECTORS.cond_logic),
       cond1_op: sel(SELECTORS.cond_op), cond2_op: sel(SELECTORS.cond_op), garage_open_op: sel(SELECTORS.cond_op), garage_close_op: sel(SELECTORS.cond_op),
-      garage_open_mode: sel(SELECTORS.garage_open_mode), garage_close_mode: sel(SELECTORS.garage_close_mode), weather_conditions: sel(SELECTORS.weather_conditions),
+      close2_logic: sel(SELECTORS.cond_logic), open2_logic: sel(SELECTORS.cond_logic), garage_open_mode: sel(SELECTORS.garage_open_mode), garage_close_mode: sel(SELECTORS.garage_close_mode), weather_conditions: sel(SELECTORS.weather_conditions),
     },
     device: Object.fromEntries(Object.entries(DEVICES).map(([k, v]) => [k, { name: v[i] }])),
     entity,
@@ -335,7 +368,7 @@ function build(i) {
       command: {
         name: ["Gruppenbefehl", "Group command"][i],
         description: ["Öffnet, schließt, fährt in den Sonnenschutz oder setzt die Automatik für einen Bereich fort.", "Opens, closes, sets sun protection or resumes automation for an area."][i],
-        fields: { action: { name: ["Aktion", "Action"][i], description: ["open, close, sun_protect, auto oder manual", "open, close, sun_protect, auto or manual"][i] }, area: { name: ["Bereich", "Area"][i], description: ["all, living, sleep oder children (nur Rollläden)", "all, living, sleep or children (shutters only)"][i] }, device_type: { name: ["Gerätetyp", "Device type"][i], description: ["shutter, awning oder garage – Markisen und Garagentore: immer alle des Typs", "shutter, awning or garage – awnings and garage doors: always all of the type"][i] } },
+        fields: { action: { name: ["Aktion", "Action"][i], description: ["open, close, sun_protect, auto oder manual", "open, close, sun_protect, auto or manual"][i] }, area: { name: ["Bereich", "Area"][i], description: ["all, living, sleep oder children (nur Rollläden)", "all, living, sleep or children (shutters only)"][i] }, device_type: { name: ["Gerätetyp", "Device type"][i], description: ["shutter, awning, garage oder roof_window – Markisen, Garagentore und Dachfenster: immer alle des Typs", "shutter, awning, garage or roof_window – awnings, garage doors and roof windows: always all of the type"][i] } },
       },
       pause: {
         name: ["Automatik pausieren", "Pause automation"][i],
@@ -346,6 +379,16 @@ function build(i) {
         name: ["Lüften", "Vent"][i],
         description: ["Fährt die Rollläden auf ihre Lüftungshöhe und hält sie dort bis zum nächsten Zeitereignis.", "Moves the shutters to their vent position and holds it until the next scheduled event."][i],
         fields: { entity_id: { name: ["Rollläden", "Covers"][i], description: ["Cover-Entitäten", "Cover entities"][i] } },
+      },
+      privacy: {
+        name: ["Sichtschutz", "Privacy"][i],
+        description: ["Fährt auf die Sichtschutz-Höhe und hält sie bis zum nächsten Zeitereignis.", "Moves to the privacy position and holds it until the next scheduled event."][i],
+        fields: { entity_id: { name: ["Rollläden", "Covers"][i], description: ["Cover-Entitäten", "Cover entities"][i] }, override_lockout: { name: ["Aussperrschutz übergehen", "Override lockout"][i], description: ["Nur nach Rückfrage: auch bei offener Tür herunterfahren.", "Only after confirmation: also move down while the door is open."][i] } },
+      },
+      my_position: {
+        name: ["My-Position", "My position"][i],
+        description: ["Fährt auf die My-Position und hält sie bis zum nächsten Zeitereignis.", "Moves to the My position and holds it until the next scheduled event."][i],
+        fields: { entity_id: { name: ["Rollläden", "Covers"][i], description: ["Cover-Entitäten", "Cover entities"][i] }, override_lockout: { name: ["Aussperrschutz übergehen", "Override lockout"][i], description: ["Nur nach Rückfrage: auch bei offener Tür herunterfahren.", "Only after confirmation: also move down while the door is open."][i] } },
       },
       resume: {
         name: ["Automatik fortsetzen", "Resume automation"][i],

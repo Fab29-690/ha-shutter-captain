@@ -36,7 +36,7 @@ COMMAND_SCHEMA = vol.Schema(
     {
         vol.Required("action"): vol.In(["open", "close", "sun_protect", "auto", "manual"]),
         vol.Optional("area", default="all"): vol.In(["all", *AREAS]),
-        vol.Optional("device_type", default="shutter"): vol.In(["shutter", "awning", "garage"]),
+        vol.Optional("device_type", default="shutter"): vol.In(["shutter", "awning", "garage", "roof_window"]),
     }
 )
 PAUSE_SCHEMA = vol.Schema(
@@ -46,6 +46,13 @@ PAUSE_SCHEMA = vol.Schema(
     }
 )
 RESUME_SCHEMA = vol.Schema({vol.Required(ATTR_ENTITY_ID): cv.entity_ids})
+POSITION_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_ENTITY_ID): cv.entity_ids,
+        # Only after the user confirmed it: also close in front of an open door.
+        vol.Optional("override_lockout", default=False): cv.boolean,
+    }
+)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
@@ -151,3 +158,13 @@ def _register_services(hass: HomeAssistant) -> None:
             await ctrl.async_vent()
 
     hass.services.async_register(DOMAIN, SERVICE_VENT, vent, RESUME_SCHEMA)
+
+    def _position(kind: str):
+        async def handler(call: ServiceCall) -> None:
+            for ctrl in _controllers_for(hass, call.data[ATTR_ENTITY_ID]):
+                await ctrl.async_position(kind, override_lockout=call.data["override_lockout"])
+
+        return handler
+
+    hass.services.async_register(DOMAIN, "privacy", _position("privacy"), POSITION_SCHEMA)
+    hass.services.async_register(DOMAIN, "my_position", _position("my"), POSITION_SCHEMA)

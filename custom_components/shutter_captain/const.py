@@ -7,7 +7,7 @@ from typing import Any
 
 DOMAIN = "shutter_captain"
 NAME = "Shutter Captain"
-VERSION = "3.1.2"
+VERSION = "3.2.0"
 
 SUBENTRY_SHUTTER = "shutter"
 
@@ -67,7 +67,7 @@ SUN_MODES = (
 
 GROUP_AREAS = ("auto", "living", "sleep", "children", "none")
 
-DEVICE_TYPES = ("shutter", "awning", "garage")
+DEVICE_TYPES = ("shutter", "awning", "garage", "roof_window")
 COND_MODES = ("off", "sun", "half_close", "no_close", "no_open")
 COND_OPS = ("on", "off", "gt", "lt", "eq", "ne")
 COND_LOGIC = ("and", "or")
@@ -95,6 +95,11 @@ STATE_TRIGGERED = "window_open"
 STATE_LOCKED = "window_locked"
 STATE_PAUSED = "paused"
 STATE_EMERGENCY = "emergency"
+STATE_OPEN_PARTLY = "open_partly"
+STATE_INSECT = "insect"
+STATE_PRIVACY = "privacy"
+STATE_MY = "my_position"
+STATE_FROST_LOCK = "frost_lock"
 
 SHUTTER_STATES = (
     STATE_NONE,
@@ -108,6 +113,11 @@ SHUTTER_STATES = (
     STATE_TRIGGERED,
     STATE_LOCKED,
     STATE_EMERGENCY,
+    STATE_OPEN_PARTLY,
+    STATE_INSECT,
+    STATE_PRIVACY,
+    STATE_MY,
+    STATE_FROST_LOCK,
     *ALARMS,
 )
 
@@ -253,6 +263,10 @@ GLOBAL_SECTIONS: dict[str, list[Field]] = {
             optional=True,
         ),
         _pct("emergency_level", 100),
+        # Frost by temperature: frost alarm below "protect", no automatic moves at all below "lock".
+        Field("frost_temp_entity", "entity", None, domains=("sensor", "weather"), optional=True),
+        Field("frost_protect_below", "float", -50, min=-50, max=10, step=0.5, unit="°C"),
+        Field("frost_lock_below", "float", -50, min=-50, max=10, step=0.5, unit="°C"),
     ]
     + [
         item
@@ -359,6 +373,22 @@ GLOBAL_SECTIONS: dict[str, list[Field]] = {
         Field("garage_light_off_on_close", "bool", False),
         Field("garage_light_close_delay", "int", 60, min=0, max=3600, step=5, unit="s"),
     ],
+    "roof_windows": [
+        Field("roof_window_rain_entity", "entity", None, domains=("binary_sensor", "input_boolean", "sensor"), optional=True),
+        Field(
+            "roof_window_wind_entity",
+            "entity",
+            None,
+            domains=("binary_sensor", "sensor", "input_boolean"),
+            optional=True,
+        ),
+        Field("roof_window_wind_speed", "float", 40, min=5, max=150, step=1, unit="km/h"),
+        _pct("roof_window_vent_level", 20),
+        Field("roof_window_auto_close_minutes", "int", 0, min=0, max=480, step=1, unit="min"),
+        Field("roof_window_close_time", "time", "00:00:00"),
+        Field("roof_window_wait_time", "int", 60, min=5, max=600, step=1, unit="s"),
+        Field("roof_window_position_tolerance", "int", 3, min=0, max=20, step=1, unit="%"),
+    ],
     "appearance": [
         Field("accent", "select", "amber", options=ACCENTS),
         Field("weather_entity", "entity", None, domains=("weather",), optional=True),
@@ -461,6 +491,16 @@ SHUTTER_SECTIONS: dict[str, list[Field]] = {
         Field("close2_lux_minutes", "int", 5, min=0, max=120, step=1, unit="min"),
         Field("close2_entity", "entity", None, optional=True),
         Field("close2_from", "time", "00:00:00"),
+        Field("close2_logic", "select", "and", options=COND_LOGIC),
+        # Second opening stage: in the morning first a partial position, fully open later.
+        Field("open2_enabled", "bool", False),
+        _pct("open1_level", 30),
+        Field("open2_lux", "float", 0, min=0, max=200000, step=1, unit="lx"),
+        Field("open2_lux_entity", "entity", None, domains=("sensor",), optional=True),
+        Field("open2_lux_minutes", "int", 5, min=0, max=120, step=1, unit="min"),
+        Field("open2_entity", "entity", None, optional=True),
+        Field("open2_from", "time", "00:00:00"),
+        Field("open2_logic", "select", "or", options=COND_LOGIC),
     ],
     "extra": [
         Field("lamp_entity", "entity", None, domains=("light", "switch"), optional=True),
@@ -476,6 +516,18 @@ SHUTTER_SECTIONS: dict[str, list[Field]] = {
         Field("alarm_wind1", "bool", False),
         Field("alarm_wind2", "bool", False),
         Field("alarm_frost", "bool", False),
+    ],
+    "positions": [
+        _pct("privacy_level", 30),
+        _pct("my_level", 50),
+        Field("frost_open_level", "int", -1, min=-1, max=100, step=1, unit="%"),
+        Field("frost_lock", "bool", False),
+        Field("insect_enabled", "bool", False),
+        Field("insect_from", "time", "11:00:00"),
+        Field("insect_to", "time", "16:00:00"),
+        Field("insect_temp_entity", "entity", None, domains=("sensor", "weather"), optional=True),
+        Field("insect_min_temp", "float", 15, min=-20, max=40, step=0.5, unit="°C"),
+        Field("insect_entity", "entity", None, optional=True),
     ],
 }
 

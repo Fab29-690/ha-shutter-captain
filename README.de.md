@@ -26,6 +26,14 @@ Inspiriert vom ioBroker-Adapter *shuttercontrol*, nativ für Home Assistant neu 
 - **Fenster & Tür**: offen/gekippt, Lüftungshöhen, Fahren bei Öffnen/Schließen, **Aussperrschutz**,
   erst schließen und dann auf Lüftungshöhe, Nachfahren nach dem Schließen, Verzögerungen.
 - **Alarme**: Feuer (bleibt verriegelt, bis „Alle öffnen/schließen“ gedrückt wird), Regen, Wind 1/2, Frost.
+  Frost auch per Temperatur – mit **Frost-Öffnungshöhe** und **Frostsperre** (festgefroren: keine automatische Fahrt).
+- **Stufen**: Schließstufe 1 per Entität, Schließstufe 2 (Nacht) per Helligkeit, Uhrzeit und/oder Entität
+  mit UND/ODER – nur nach vollständigem Schließen. **Öffnungsstufe 2**: morgens erst Teilhöhe, später ganz.
+- **Sichtschutz** und **My-Position** je Rollladen als Knopf, Dienst und in Panel und Karte;
+  **Insektenschutz**: einmal am Tag kurz ganz hoch und zurück.
+- **Gerätetypen**: Rollläden/Jalousien, Markisen, Garagentore/Tore und **Dachfenster** (schließen bei
+  Regen/Wind, automatisch nach X Minuten und abends, Lüften) – jeweils mit eigenen Einstellungen und Symbol.
+- **Plausibilitäts-Hinweise** im Panel bei widersprüchlichen oder wirkungslosen Einstellungen.
 - **Kalender**: Workday-Sensor (Feiertage), Arbeitstag morgen, Urlaub, Schulferien je Bereich,
   Sommer (nicht schließen), Weihnachtshöhe, spät schließen, Zwischenposition.
 - **Handbetrieb-Erkennung** mit Rundung auf bekannte Höhen; endet beim nächsten Zeitereignis,
@@ -136,6 +144,9 @@ data: { entity_id: cover.wohnzimmer, minutes: 120 }
 
 action: shutter_captain.resume
 data: { entity_id: cover.wohnzimmer }
+
+action: shutter_captain.privacy         # Sichtschutz (oder: shutter_captain.my_position)
+data: { entity_id: cover.wohnzimmer }   # override_lockout: true nur nach Rückfrage
 ```
 
 ## Projekt unterstützen

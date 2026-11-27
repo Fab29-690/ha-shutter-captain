@@ -28,7 +28,8 @@
           "behaviour": "Behaviour & manual mode",
           "appearance": "Appearance",
           "awnings": "Awnings",
-          "garages": "Garage doors"
+          "garages": "Garage doors",
+          "roof_windows": "Roof windows"
         }
       },
       "area_living": {
@@ -169,6 +170,9 @@
         "data": {
           "emergency_entity": "Emergency input",
           "emergency_level": "Emergency position",
+          "frost_temp_entity": "Frost: temperature sensor",
+          "frost_protect_below": "Frost protection when colder than",
+          "frost_lock_below": "Frost lock when colder than",
           "alarm_fire_entity": "Fire: trigger",
           "alarm_fire_level": "Fire: position",
           "alarm_rain_entity": "Rain: trigger",
@@ -182,7 +186,31 @@
         },
         "data_description": {
           "emergency_entity": "E.g. smoke detector. Highest priority: overrides alarms, manual mode and the main switch for all shutters. Awnings retract.",
-          "emergency_level": "100% = fully open (escape route)."
+          "emergency_level": "100% = fully open (escape route).",
+          "frost_temp_entity": "Outside temperature for frost protection and frost lock (sensor or weather entity).",
+          "frost_protect_below": "Below this the frost alarm is active, like with the frost trigger: shutters with the frost alarm close to the frost position, shutters with a frost opening position only open that far. Off again 1 °C above. −50 = off.",
+          "frost_lock_below": "Below this, shutters with 'Frost lock' are no longer moved automatically (frozen). Manual control still works. −50 = off."
+        }
+      },
+      "roof_windows": {
+        "title": "Roof windows",
+        "data": {
+          "roof_window_rain_entity": "Rain sensor (roof windows)",
+          "roof_window_wind_entity": "Wind sensor (roof windows)",
+          "roof_window_wind_speed": "Close from wind speed",
+          "roof_window_vent_level": "Vent position",
+          "roof_window_auto_close_minutes": "Close automatically after",
+          "roof_window_close_time": "Close in the evening at",
+          "roof_window_wait_time": "Travel / wait time",
+          "roof_window_position_tolerance": "Position tolerance"
+        },
+        "data_description": {
+          "roof_window_rain_entity": "On/rain or rain amount > 0 → roof windows close – also in manual mode and with the main switch off.",
+          "roof_window_wind_entity": "Switch/binary sensor (on = wind) or wind speed in km/h.",
+          "roof_window_vent_level": "The vent button opens the roof windows this far. Not in rain or wind.",
+          "roof_window_auto_close_minutes": "When a roof window has been open this long. 0 = off.",
+          "roof_window_close_time": "Closes open roof windows at this time. 00:00 = off.",
+          "roof_window_wait_time": "At least the travel time of the roof window."
         }
       },
       "behaviour": {
@@ -410,7 +438,7 @@
           }
         },
         "stages": {
-          "title": "Closing stages",
+          "title": "Opening & closing stages",
           "data": {
             "close1_entity": "Stage 1: also close when on",
             "close1_from": "Stage 1 by entity not before",
@@ -421,15 +449,53 @@
             "close2_lux_entity": "Stage 2: brightness sensor",
             "close2_lux_minutes": "Stage 2: below for",
             "close2_entity": "Stage 2 also when on",
-            "close2_from": "Stage 2 not before"
+            "close2_from": "Stage 2 from time",
+            "close2_logic": "Stage 2: combine triggers",
+            "open2_enabled": "Second opening stage (morning)",
+            "open1_level": "Opening stage 1: position",
+            "open2_lux": "Fully open when brightness above",
+            "open2_lux_entity": "Opening stage 2: brightness sensor",
+            "open2_lux_minutes": "Opening stage 2: above for",
+            "open2_entity": "Fully open when on",
+            "open2_from": "Fully open from time",
+            "open2_logic": "Opening stage 2: combine triggers"
           },
           "data_description": {
             "close1_entity": "E.g. a light turning on. Closes in addition to the time/brightness automation.",
-            "close2_enabled": "After stage 1 moves to a second position/slat angle – only with automation on, no lock and the window closed.",
+            "close2_enabled": "After a full close (stage 1) moves to a second position/slat angle – only with automation on, no lock and the window closed.",
             "close2_tilt": "−1 = do not change.",
             "close2_lux": "0 = not by brightness.",
             "close2_lux_entity": "Empty = global brightness sensor.",
-            "close2_from": "00:00 = no time limit."
+            "close2_from": "Time trigger. 00:00 = no time trigger.",
+            "close2_logic": "AND: all configured triggers (brightness, time, entity) must apply · OR: one is enough. Without a trigger stage 2 never runs.",
+            "open2_enabled": "In the morning first only to a partial position, fully open later – by brightness, time or entity. Without a trigger it opens fully at once.",
+            "open2_lux": "0 = not by brightness.",
+            "open2_lux_entity": "Empty = global brightness sensor.",
+            "open2_from": "00:00 = no time trigger."
+          }
+        },
+        "positions": {
+          "title": "Positions, frost & insects",
+          "data": {
+            "privacy_level": "Privacy position",
+            "my_level": "My position",
+            "frost_open_level": "On frost only open to",
+            "frost_lock": "Frost lock",
+            "insect_enabled": "Insect protection",
+            "insect_from": "Insect protection from",
+            "insect_to": "Insect protection until",
+            "insect_temp_entity": "Insect protection: temperature sensor",
+            "insect_min_temp": "Insect protection only from",
+            "insect_entity": "Insect protection only when on"
+          },
+          "data_description": {
+            "privacy_level": "Button and service 'Privacy' – held until the next scheduled event.",
+            "my_level": "Favourite position for the 'My position' button and service – held until the next scheduled event.",
+            "frost_open_level": "While frost is active (frost trigger or temperature) the automation only opens up to this position. −1 = off.",
+            "frost_lock": "Below the frost lock temperature (Settings → Alarms) this shutter is not moved automatically at all – protects frozen curtains and motors.",
+            "insect_enabled": "Once a day briefly fully up and back to the previous position (slats included) – drives insects out of the shutter box. Skipped when the shutter was fully up that day. Waits while the window is open, a lock, alarm or frost is active or the automation is off.",
+            "insect_temp_entity": "Empty = no temperature check.",
+            "insect_entity": "Optional condition, e.g. a 'summer' switch."
           }
         },
         "extra": {
@@ -582,7 +648,8 @@
       "options": {
         "shutter": "Shutter / blind",
         "awning": "Awning",
-        "garage": "Garage door / gate"
+        "garage": "Garage door / gate",
+        "roof_window": "Roof window"
       }
     },
     "window_profile": {
@@ -646,6 +713,18 @@
         "lt": "less than",
         "eq": "equal to",
         "ne": "not equal to"
+      }
+    },
+    "close2_logic": {
+      "options": {
+        "and": "All met (AND)",
+        "or": "Any met (OR)"
+      }
+    },
+    "open2_logic": {
+      "options": {
+        "and": "All met (AND)",
+        "or": "Any met (OR)"
       }
     },
     "garage_open_mode": {
@@ -725,7 +804,12 @@
           "rain": "Rain alarm",
           "wind1": "Wind alarm 1",
           "wind2": "Wind alarm 2",
-          "frost": "Frost protection"
+          "frost": "Frost protection",
+          "open_partly": "Partly open",
+          "insect": "Insect protection",
+          "privacy": "Privacy",
+          "my_position": "My position",
+          "frost_lock": "Frost lock"
         }
       },
       "next_up": {
@@ -792,6 +876,12 @@
       "vent": {
         "name": "Vent"
       },
+      "privacy": {
+        "name": "Privacy"
+      },
+      "my_position": {
+        "name": "My position"
+      },
       "auto_all": {
         "name": "All: resume automation"
       },
@@ -853,7 +943,7 @@
         },
         "device_type": {
           "name": "Device type",
-          "description": "shutter, awning or garage – awnings and garage doors: always all of the type"
+          "description": "shutter, awning, garage or roof_window – awnings, garage doors and roof windows: always all of the type"
         }
       }
     },
@@ -878,6 +968,34 @@
         "entity_id": {
           "name": "Covers",
           "description": "Cover entities"
+        }
+      }
+    },
+    "privacy": {
+      "name": "Privacy",
+      "description": "Moves to the privacy position and holds it until the next scheduled event.",
+      "fields": {
+        "entity_id": {
+          "name": "Covers",
+          "description": "Cover entities"
+        },
+        "override_lockout": {
+          "name": "Override lockout",
+          "description": "Only after confirmation: also move down while the door is open."
+        }
+      }
+    },
+    "my_position": {
+      "name": "My position",
+      "description": "Moves to the My position and holds it until the next scheduled event.",
+      "fields": {
+        "entity_id": {
+          "name": "Covers",
+          "description": "Cover entities"
+        },
+        "override_lockout": {
+          "name": "Override lockout",
+          "description": "Only after confirmation: also move down while the door is open."
         }
       }
     },

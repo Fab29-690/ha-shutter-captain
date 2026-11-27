@@ -330,3 +330,39 @@ def next_alarm(
         if name in active:
             return name
     return None
+
+
+# --- stages, frost, insect protection -----------------------------------------
+
+
+def stage_time_reached(since: datetime, at: time, now: datetime, *, night: bool) -> bool:
+    """Time trigger of a stage that started at `since`.
+
+    A time already passed when the stage started counts as reached at once – except for the
+    night stage, where a morning time (before noon) means "after midnight".
+    """
+    candidate = since.replace(hour=at.hour, minute=at.minute, second=at.second, microsecond=0)
+    if candidate < since and night and at.hour < 12:
+        candidate += timedelta(days=1)
+    return now >= candidate
+
+
+def below_limit(active: bool, value: float | None, limit: float, hyst: float = 1.0) -> bool:
+    """Frost-like threshold: on below `limit`, off again only from `limit + hyst`.
+
+    A limit of -50 or lower means "off"; an unknown value keeps the current state.
+    """
+    if limit <= -50:
+        return False
+    if value is None:
+        return active
+    return value < (limit + hyst if active else limit)
+
+
+def in_time_window(now: time, start: time | None, end: time | None) -> bool:
+    """Daily window [start, end), may wrap midnight; a missing bound means open."""
+    if start is None or end is None or start == end:
+        return True
+    if start < end:
+        return start <= now < end
+    return now >= start or now < end

@@ -1,5 +1,43 @@
 # Changelog
 
+## 3.2.0
+
+- **Frost by temperature**: a temperature sensor (Settings → Alarms) can drive the frost alarm
+  ("frost protection when colder than") and a **frost lock** ("frost lock when colder than"), each
+  with 1 °C hysteresis; -50 = off. The frost trigger entity keeps working as before.
+- **Frost opening position** per shutter: while frost is active the automation only opens up to this
+  position (-1 = off); when the frost is over the shutter opens fully.
+- **Frost lock** per shutter: below the lock temperature the shutter is not moved automatically at
+  all (schedule, sun, stages, window, wind/rain alarms). Manual control, explicit commands, the fire
+  alarm and the emergency input still work.
+- **Second closing stage aligned**: triggers brightness, time and entity can now be combined with
+  **AND** (all configured triggers must apply, default) or **OR**; stage 2 only follows a *full*
+  close (not the intermediate / partial position). The time is a real trigger now and also works
+  after midnight (e.g. stage 1 at 21:00, stage 2 at 01:00).
+- **Second opening stage**: in the morning first only to a partial position, fully open later –
+  by brightness (with minimum duration), time and/or entity (AND/OR). Without a trigger the shutter
+  opens fully at once. Sun protection starts once it is fully open.
+- **Insect protection**: once a day briefly fully up and back to the previous position, slats
+  included – time window (default 11–16), optional temperature sensor with minimum (default 15 °C)
+  and a condition entity. Skipped when the shutter was fully up that day; waits while the window is
+  open, a lock, alarm or frost is active or the automation is off. Stored, so no second run after a
+  restart (and a shutter caught at the top by a restart goes back).
+- **Privacy position** (default 30 %) and **My position** (default 50 %) per shutter and awning:
+  buttons, services `shutter_captain.privacy` / `shutter_captain.my_position`, menu entries in the
+  panel and buttons in the dashboard card (option *Privacy / My position buttons*). Held until the
+  next scheduled event, like venting. The lockout protection applies; panel and card ask first and
+  only then move down in front of an open door.
+- **New device type roof window**: closes on rain and wind (also in manual mode and with the main
+  switch off), cannot be opened by command or vent button while it rains, closes after X minutes
+  open and at an evening time, vent button with its own vent position. Own edit tab, own settings
+  tab, own filter in the overview, own symbol in panel and card. Never moved by shutter schedules or
+  groups.
+- **Plausibility hints** in the panel editor, the device list and the settings, e.g. lockout allows
+  closing with the door open, opening is off so sun protection never applies, a stage without
+  trigger, overlapping brightness time windows, frost settings without a frost source.
+- Fixed: the status chips of the dashboard card showed "Open"/"Closed" without the number of
+  shutters (label clash with the garage door states).
+
 ## 3.1.2
 
 - README: optional "Support this project" section with a PayPal link. Shutter Captain stays free –
