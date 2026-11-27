@@ -192,4 +192,10 @@ A ⭐ on GitHub, a bug report or an idea in the issues helps just as much. Thank
 
 ## License
 
-MIT
+Copyright (C) 2026 Fab29-690
+
+Shutter Captain is free software: you can redistribute it and/or modify it under the terms of the
+[GNU General Public License v3.0](LICENSE) as published by the Free Software Foundation.
+It is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY.
+
+Versions up to and including 3.2.0 were released under the MIT License.

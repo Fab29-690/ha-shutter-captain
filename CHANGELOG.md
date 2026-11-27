@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.2.1
+
+- **License changed to GPL-3.0** (previously MIT). Using Shutter Captain stays free and unchanged;
+  anyone who distributes a modified version must publish it under the GPL-3.0 as well.
+  Versions up to and including 3.2.0 remain available under the MIT License.
+- No code changes compared to 3.2.0.
+
 ## 3.2.0
 
 - **Frost by temperature**: a temperature sensor (Settings → Alarms) can drive the frost alarm

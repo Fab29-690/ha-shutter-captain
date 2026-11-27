@@ -160,3 +160,13 @@ du die Weiterentwicklung mit einer völlig freiwilligen Spende unterstützen:
 [![Mit PayPal unterstützen](https://img.shields.io/badge/PayPal-Projekt%20unterst%C3%BCtzen-00457C?logo=paypal&logoColor=white)](https://www.paypal.com/donate/?hosted_button_id=MJXKHUFM5M7ZQ)
 
 Ein ⭐ auf GitHub, ein Fehlerbericht oder eine Idee in den Issues hilft genauso. Danke!
+
+## Lizenz
+
+Copyright (C) 2026 Fab29-690
+
+Shutter Captain ist freie Software unter der [GNU General Public License v3.0](LICENSE). Du darfst
+sie nutzen, weitergeben und verändern – veränderte Versionen müssen aber ebenfalls unter der GPL-3.0
+mit offenem Quellcode veröffentlicht werden. Es gibt keine Gewährleistung.
+
+Versionen bis einschließlich 3.2.0 wurden unter der MIT-Lizenz veröffentlicht.
